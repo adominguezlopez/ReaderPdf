@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        maven { url 'https://maven.ghostscript.com/' }
         gradlePluginPortal()
         google()
         mavenCentral()
@@ -8,9 +9,11 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        maven { url 'https://maven.ghostscript.com/' }
         google()
         mavenCentral()
     }
 }
 rootProject.name = "ReaderPdf"
 include ':sample'
+include ':viewer'
