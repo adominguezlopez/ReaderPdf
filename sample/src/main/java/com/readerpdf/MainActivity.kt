@@ -1,11 +1,13 @@
-package com.readerPdf
+package com.readerpdf
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.ReaderPdf.databinding.ActivityMainBinding
+import com.readerpdf.databinding.ActivityMainBinding
 import com.artifex.mupdf.fitz.Buffer
 import com.artifex.mupdf.fitz.PDFDocument
 import com.artifex.mupdf.fitz.Rect
+import com.viewer.PDFCore
+import com.viewer.PageAdapter
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -14,6 +16,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var inernalAssetsFolder: String
     private val totalPages = 10
+
+    private var adapter: PageAdapter? = null
+    private var core: PDFCore? = null
+    lateinit var document: PDFDocument
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +71,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPdf(){
-        
+        if (core!=null)
+            reset()
+
+        val documentFile = File(inernalAssetsFolder, "/Main.pdf")
+
+        document = PDFDocument.openDocument(documentFile.absolutePath) as PDFDocument
+
+        core = PDFCore(document)
+        binding.readerView.destroy()
+        adapter?.reset()
+        adapter = PageAdapter(this, core!!)
+        binding.readerView.adapter = adapter
+        binding.readerView.setLinksEnabled(true)
     }
 
     private fun loadPdfPage(){

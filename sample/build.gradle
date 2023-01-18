@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.ReaderPdf'
+    namespace 'com.readerpdf'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.ReaderPdf"
+        applicationId "com.readerpdf"
         minSdk 21
         targetSdk 32
         versionCode 1
