@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPdf(){
-
+        
     }
 
     private fun loadPdfPage(){
