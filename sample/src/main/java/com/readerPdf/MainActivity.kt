@@ -1,4 +1,4 @@
-package com.ReaderPdf
+package com.readerPdf
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle

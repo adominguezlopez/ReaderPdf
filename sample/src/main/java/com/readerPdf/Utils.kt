@@ -1,4 +1,4 @@
-package com.ReaderPdf
+package com.readerPdf
 
 import android.content.Context
 import android.content.res.AssetManager
