@@ -1,9 +1,27 @@
 package com.readerpdf
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
-import com.readerpdf.databinding.ActivityMainBinding
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.LinearLayout
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.SnackbarDefaults.backgroundColor
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import com.artifex.mupdf.fitz.Buffer
 import com.artifex.mupdf.fitz.PDFDocument
 import com.artifex.mupdf.fitz.Rect
@@ -13,48 +31,106 @@ import com.viewer.PageView
 import com.viewer.ReaderView
 import java.io.File
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    lateinit var binding: ActivityMainBinding
+    private val totalPages = 10
+    private val pwd = "q82n3ks92j9sd72bnsldf7823hbzx7"
 
     private lateinit var inernalAssetsFolder: String
-    private val totalPages = 10
 
     private var adapter: PageAdapter? = null
     private var core: PDFCore? = null
     lateinit var document: PDFDocument
-    private var actualPage = 0
-    private val pwd = "q82n3ks92j9sd72bnsldf7823hbzx7"
+    private lateinit var readerView: ReaderView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
-        inernalAssetsFolder = applicationContext.cacheDir!!.absolutePath+"/assets/"
+        inernalAssetsFolder = applicationContext.cacheDir!!.absolutePath + "/assets/"
 
-        binding.downloadAssetsButton.setOnClickListener {
-            copyAssets(this)
-        }
-
-        binding.clearPdf.setOnClickListener {
-            clearPdf()
-        }
-
-        binding.loadPdfButton.setOnClickListener {
-            loadPdf()
-        }
-
-        binding.loadNewPage.setOnClickListener {
-            loadPdfPage()
-        }
-
-        binding.test.setOnClickListener {
-            reset()
+        setContent {
+            MaterialTheme(
+                content = {
+                    // A surface container using the 'background' color from the theme
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        AndroidView(factory = { ctx ->
+                            ReaderView(ctx).apply {
+                                layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                            }
+                        }, update = {
+                            readerView = it
+                        })
+                        Buttons()
+                    }
+                })
         }
     }
 
-    private fun clearPdf(){
+    @Composable
+    fun BoxScope.Buttons(
+    ) {
+        val context = LocalContext.current
+        val actualPage: MutableState<Int> = remember { mutableStateOf(0) }
+
+        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
+            Row {
+                SettingsButton(
+                    title = "Dw ASSETS",
+                    onClick = {
+                        copyAssets(context)
+                    },
+                )
+                SettingsButton(
+                    title = "Clr Pdf",
+                    onClick = {
+                        clearPdf()
+                    },
+                )
+            }
+            Row {
+                SettingsButton(
+                    title = "Ld Pdf",
+                    onClick = {
+                        loadPdf()
+                    },
+                )
+                SettingsButton(
+                    title = "Ld page ${actualPage.value}",
+                    onClick = {
+                        loadPdfPage(actualPage.value)
+                        actualPage.value++
+                    },
+                )
+                SettingsButton(
+                    title = "reset",
+                    onClick = {
+                        reset()
+                    },
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun RowScope.SettingsButton(
+        title: String,
+        onClick: () -> Unit,
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 4.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = backgroundColor)
+        ) {
+            Text(text = title, color = Color.White)
+        }
+
+    }
+
+    private fun clearPdf() {
         val documentFile = File(inernalAssetsFolder, "/Main.pdf")
 
         val document = PDFDocument()
@@ -75,8 +151,8 @@ class MainActivity : AppCompatActivity() {
         document.save(documentFile.absolutePath, "")
     }
 
-    private fun loadPdf(){
-        if (core!=null)
+    private fun loadPdf() {
+        if (core != null)
             reset()
 
         val documentFile = File(inernalAssetsFolder, "/Main.pdf")
@@ -84,29 +160,26 @@ class MainActivity : AppCompatActivity() {
         document = PDFDocument.openDocument(documentFile.absolutePath) as PDFDocument
 
         core = PDFCore(document)
-        binding.readerView.destroy()
+        readerView.destroy()
         adapter?.reset()
         adapter = PageAdapter(this, core!!)
-        binding.readerView.adapter = adapter
-        binding.readerView.setLinksEnabled(true)
+        readerView.adapter = adapter
+        readerView.setLinksEnabled(true)
     }
 
-    private fun loadPdfPage(){
-        addNewPage()
+    private fun loadPdfPage(actualPage: Int) {
+        addNewPage(actualPage)
 
-        binding.readerView.applyToChildArround(object : ReaderView.ViewMapper() {
+        readerView.applyToChildArround(object : ReaderView.ViewMapper() {
             override fun applyToView(view: View) {
                 (view as PageView).apply {
                     update()
                 }
             }
         }, actualPage)
-
-        actualPage++
-        binding.loadNewPage.text = "Ld page $actualPage"
     }
 
-    private fun addNewPage() {
+    private fun addNewPage(actualPage: Int) {
         val documentFile = File(inernalAssetsFolder, "/Main.pdf")
         val insert = "${actualPage.toString().padStart(6, '0')}.pdf"
         val pageFile = File("${cacheDir.absolutePath}/assets", insert)
@@ -121,7 +194,7 @@ class MainActivity : AppCompatActivity() {
             core?.addPageLinks(actualPage, links)
             adapter?.setLinks(links, actualPage)
 
-            binding.readerView.applyToChild(object : ReaderView.ViewMapper() {
+            readerView.applyToChild(object : ReaderView.ViewMapper() {
                 override fun applyToView(view: View) {
                     (view as PageView).apply {
                         updateLinks(links)
@@ -133,8 +206,8 @@ class MainActivity : AppCompatActivity() {
         document.save(documentFile.absolutePath, "")
     }
 
-    private fun reset(){
-        binding.readerView.applyToChildren(object : ReaderView.ViewMapper() {
+    private fun reset() {
+        readerView.applyToChildren(object : ReaderView.ViewMapper() {
             override fun applyToView(view: View) {
                 (view as PageView).releaseBitmaps()
             }
@@ -142,7 +215,8 @@ class MainActivity : AppCompatActivity() {
 
         adapter?.reset()
 
-        binding.readerView.destroy()
+        readerView.destroy()
         core?.onDestroy()
     }
 }
+
