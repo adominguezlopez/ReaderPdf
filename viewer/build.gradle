@@ -45,7 +45,7 @@ android {
 
 dependencies {
     api 'com.artifex.mupdf:fitz:1.20.2'
-    implementation "com.google.accompanist:accompanist-pager:0.29.0-alpha"
+    implementation "com.google.accompanist:accompanist-pager:0.28.0"
     implementation "io.coil-kt:coil-compose:2.0.0-rc01"
 
     implementation "androidx.core:core-ktx:$android_core_ktx"

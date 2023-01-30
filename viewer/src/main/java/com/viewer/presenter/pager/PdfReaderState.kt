@@ -1,11 +1,11 @@
 package com.viewer.presenter.pager
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.PagerState
 import java.io.File
 
 @Composable
@@ -18,13 +18,13 @@ fun rememberPdfReaderState(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Stable
 class PdfReaderState(
     val initialPage: Int,
     val pages: SnapshotStateList<PdfReaderPage>
 ) {
-    val pageState = PagerState(initialPage = initialPage, initialPageOffsetFraction = 0f)
+    @OptIn(ExperimentalPagerApi::class)
+    val pageState = PagerState(currentPage = initialPage)
     val pageCount get() = pages.size
 }
 

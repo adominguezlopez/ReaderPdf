@@ -3,6 +3,8 @@ package com.readerpdf
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.artifex.mupdf.fitz.Buffer
 import com.artifex.mupdf.fitz.PDFDocument
 import com.artifex.mupdf.fitz.Rect
@@ -49,7 +52,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val list = remember {
                 mutableStateListOf<PdfReaderPage>().apply {
+                    val file = File("${cacheDir.absolutePath}/assets")
                     addAll(listOf(
+                        /*
                         PdfReaderPage.Url("https://cdnb.artstation.com/p/assets/images/images/014/837/255/large/jaya-basak-img-20170810-185149.jpg?1545822478"),
                         PdfReaderPage.Url("https://d1csarkz8obe9u.cloudfront.net/posterpreviews/travel-magazine-in-page-design-template-5313fa56e5a4b94c79d3d5bd8de42adf_screen.jpg?ts=1637035546"),
                         PdfReaderPage.Url("https://as1.ftcdn.net/v2/jpg/01/98/03/08/1000_F_198030876_RTsn9BQeFz7UMuKYa36ChnB7W6A9mqR3.jpg"),
@@ -60,6 +65,17 @@ class MainActivity : ComponentActivity() {
                         PdfReaderPage.Url("https://as1.ftcdn.net/v2/jpg/01/98/03/08/1000_F_198030876_RTsn9BQeFz7UMuKYa36ChnB7W6A9mqR3.jpg"),
                         PdfReaderPage.Url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ98bZuiEHjQcgNE_2_QaRKwO0cvccP-eiyZQ&usqp=CAU"),
                         PdfReaderPage.Url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQICaiZ8uM-64Z0OlrLJRGByIu55VhCqKrxCg&usqp=CAU")
+                         */
+                    PdfReaderPage.PdfFile(File(file, "000000.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000001.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000002.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000003.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000004.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000005.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000006.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000007.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000008.pdf"), pwd),
+                    PdfReaderPage.PdfFile(File(file, "000009.pdf"), pwd),
                     ))
                 }
             }
@@ -78,13 +94,16 @@ class MainActivity : ComponentActivity() {
                         }, update = {
                             readerView = it
                         })
+                        Buttons()
+
                          */
 
                         PdfReader(readerState, doublePage = false, rtl = false, pageContent = {
                             Log.d("pageLIstener", "changeing page to: ${it}")
                         })
 
-                        Buttons()
+
+
                     }
                 })
         }

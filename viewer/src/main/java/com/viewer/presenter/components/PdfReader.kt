@@ -1,16 +1,16 @@
 package com.viewer.presenter.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
 import com.viewer.presenter.pager.PdfReaderPage
 import com.viewer.presenter.pager.PdfReaderState
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun PdfReader(
     readerState: PdfReaderState,
@@ -18,15 +18,18 @@ fun PdfReader(
     rtl: Boolean = false,
     pageContent: (Int) -> Unit
 ) {
+
     HorizontalPager(
         state = readerState.pageState,
         modifier = Modifier.fillMaxSize(),
         reverseLayout = rtl,
-        pageCount = readerState.pageCount
+        count = readerState.pageCount,
     ) { position ->
         when (val page = readerState.pages[position]){
             PdfReaderPage.Empty -> TODO()
-            is PdfReaderPage.PdfFile -> TODO()
+            is PdfReaderPage.PdfFile -> {
+                PdfSinglePage(page, readerState.pageState)
+            }
             is PdfReaderPage.Url -> {
                 PdfPageUrl(
                     page.url
