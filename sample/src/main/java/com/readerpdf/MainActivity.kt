@@ -1,9 +1,8 @@
 package com.readerpdf
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -12,16 +11,12 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.SnackbarDefaults.backgroundColor
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.dp
 import com.artifex.mupdf.fitz.Buffer
 import com.artifex.mupdf.fitz.PDFDocument
 import com.artifex.mupdf.fitz.Rect
@@ -29,6 +24,9 @@ import com.viewer.PDFCore
 import com.viewer.PageAdapter
 import com.viewer.PageView
 import com.viewer.ReaderView
+import com.viewer.presenter.components.PdfReader
+import com.viewer.presenter.pager.PdfReaderPage
+import com.viewer.presenter.pager.rememberPdfReaderState
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -49,12 +47,30 @@ class MainActivity : ComponentActivity() {
         inernalAssetsFolder = applicationContext.cacheDir!!.absolutePath + "/assets/"
 
         setContent {
+            val list = remember {
+                mutableStateListOf<PdfReaderPage>().apply {
+                    addAll(listOf(
+                        PdfReaderPage.Url("https://cdnb.artstation.com/p/assets/images/images/014/837/255/large/jaya-basak-img-20170810-185149.jpg?1545822478"),
+                        PdfReaderPage.Url("https://d1csarkz8obe9u.cloudfront.net/posterpreviews/travel-magazine-in-page-design-template-5313fa56e5a4b94c79d3d5bd8de42adf_screen.jpg?ts=1637035546"),
+                        PdfReaderPage.Url("https://as1.ftcdn.net/v2/jpg/01/98/03/08/1000_F_198030876_RTsn9BQeFz7UMuKYa36ChnB7W6A9mqR3.jpg"),
+                        PdfReaderPage.Url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ98bZuiEHjQcgNE_2_QaRKwO0cvccP-eiyZQ&usqp=CAU"),
+                        PdfReaderPage.Url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQICaiZ8uM-64Z0OlrLJRGByIu55VhCqKrxCg&usqp=CAU"),
+                        PdfReaderPage.Url("https://cdnb.artstation.com/p/assets/images/images/014/837/255/large/jaya-basak-img-20170810-185149.jpg?1545822478"),
+                        PdfReaderPage.Url("https://d1csarkz8obe9u.cloudfront.net/posterpreviews/travel-magazine-in-page-design-template-5313fa56e5a4b94c79d3d5bd8de42adf_screen.jpg?ts=1637035546"),
+                        PdfReaderPage.Url("https://as1.ftcdn.net/v2/jpg/01/98/03/08/1000_F_198030876_RTsn9BQeFz7UMuKYa36ChnB7W6A9mqR3.jpg"),
+                        PdfReaderPage.Url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ98bZuiEHjQcgNE_2_QaRKwO0cvccP-eiyZQ&usqp=CAU"),
+                        PdfReaderPage.Url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQICaiZ8uM-64Z0OlrLJRGByIu55VhCqKrxCg&usqp=CAU")
+                    ))
+                }
+            }
+            val readerState = rememberPdfReaderState(0, list)
             MaterialTheme(
                 content = {
                     // A surface container using the 'background' color from the theme
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        /*
                         AndroidView(factory = { ctx ->
                             ReaderView(ctx).apply {
                                 layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
@@ -62,6 +78,12 @@ class MainActivity : ComponentActivity() {
                         }, update = {
                             readerView = it
                         })
+                         */
+
+                        PdfReader(readerState, doublePage = false, rtl = false, pageContent = {
+                            Log.d("pageLIstener", "changeing page to: ${it}")
+                        })
+
                         Buttons()
                     }
                 })
