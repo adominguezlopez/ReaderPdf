@@ -1,13 +1,13 @@
 package com.viewer.presenter.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import com.viewer.presenter.pager.HorizontalPager
 import com.viewer.presenter.pager.pdf.PdfReaderPage
 import com.viewer.presenter.pager.pdf.PdfReaderState
+import com.viewer.presenter.pager.rememberPagerState
 
 @Composable
 fun PdfReader(
@@ -16,29 +16,29 @@ fun PdfReader(
     rtl: Boolean = false,
     pageContent: (Int) -> Unit
 ) {
-    HorizontalPager(
-        state = readerState.pageState,
-        modifier = Modifier.fillMaxSize(),
-        reverseLayout = rtl,
-        count = readerState.pageCount,
-    ) { position ->
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val pagerState = rememberPagerState()
 
-        when (val page = readerState.pages[position]){
-            PdfReaderPage.Empty -> TODO()
-            is PdfReaderPage.PdfFile -> {
-                PdfSinglePage(page, readerState.pageState)
-            }
-            is PdfReaderPage.Url -> {
-                PdfPageUrl(
-                    page.url
-                )
-            }
-        }
-    }
+        HorizontalPager(
 
-    LaunchedEffect(readerState.pageState) {
-        snapshotFlow { readerState.pageState.currentPage }.collect { page ->
-            pageContent.invoke(page)
+            count = readerState.pageCount,
+            state = pagerState,
+        ) { position ->
+
+            when (val page = readerState.pages[position]) {
+                PdfReaderPage.Empty -> TODO()
+                is PdfReaderPage.PdfFile -> {
+                    PdfSinglePage(page, this, position)
+                }
+                is PdfReaderPage.Url -> {
+                    PdfPageUrl(
+                        page.url
+                    )
+                }
+            }
         }
     }
 }
+
