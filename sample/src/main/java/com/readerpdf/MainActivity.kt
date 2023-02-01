@@ -3,8 +3,6 @@ package com.readerpdf
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -19,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.artifex.mupdf.fitz.Buffer
 import com.artifex.mupdf.fitz.PDFDocument
 import com.artifex.mupdf.fitz.Rect
@@ -28,8 +25,8 @@ import com.viewer.PageAdapter
 import com.viewer.PageView
 import com.viewer.ReaderView
 import com.viewer.presenter.components.PdfReader
-import com.viewer.presenter.pager.PdfReaderPage
-import com.viewer.presenter.pager.rememberPdfReaderState
+import com.viewer.presenter.pager.pdf.PdfReaderPage
+import com.viewer.presenter.pager.pdf.rememberPdfReaderState
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -48,6 +45,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         inernalAssetsFolder = applicationContext.cacheDir!!.absolutePath + "/assets/"
+
+        copyAssets(this)
 
         setContent {
             val list = remember {
@@ -87,6 +86,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         /*
+
                         AndroidView(factory = { ctx ->
                             ReaderView(ctx).apply {
                                 layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
@@ -95,15 +95,11 @@ class MainActivity : ComponentActivity() {
                             readerView = it
                         })
                         Buttons()
-
                          */
 
                         PdfReader(readerState, doublePage = false, rtl = false, pageContent = {
                             Log.d("pageLIstener", "changeing page to: ${it}")
                         })
-
-
-
                     }
                 })
         }

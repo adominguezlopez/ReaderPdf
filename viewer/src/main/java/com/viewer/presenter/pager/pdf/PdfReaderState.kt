@@ -1,11 +1,10 @@
-package com.viewer.presenter.pager
+package com.viewer.presenter.pager.pdf
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.PagerState
+import com.viewer.presenter.pager.PagerState
 import java.io.File
 
 @Composable
@@ -23,7 +22,6 @@ class PdfReaderState(
     val initialPage: Int,
     val pages: SnapshotStateList<PdfReaderPage>
 ) {
-    @OptIn(ExperimentalPagerApi::class)
     val pageState = PagerState(currentPage = initialPage)
     val pageCount get() = pages.size
 }

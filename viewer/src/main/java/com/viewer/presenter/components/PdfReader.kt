@@ -5,12 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.viewer.presenter.pager.PdfReaderPage
-import com.viewer.presenter.pager.PdfReaderState
+import com.viewer.presenter.pager.HorizontalPager
+import com.viewer.presenter.pager.pdf.PdfReaderPage
+import com.viewer.presenter.pager.pdf.PdfReaderState
 
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun PdfReader(
     readerState: PdfReaderState,
@@ -18,13 +16,13 @@ fun PdfReader(
     rtl: Boolean = false,
     pageContent: (Int) -> Unit
 ) {
-
     HorizontalPager(
         state = readerState.pageState,
         modifier = Modifier.fillMaxSize(),
         reverseLayout = rtl,
         count = readerState.pageCount,
     ) { position ->
+
         when (val page = readerState.pages[position]){
             PdfReaderPage.Empty -> TODO()
             is PdfReaderPage.PdfFile -> {
