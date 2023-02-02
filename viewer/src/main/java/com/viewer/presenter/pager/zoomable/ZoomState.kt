@@ -227,6 +227,7 @@ class ZoomState(
             launch {
                 _offsetY.animateDecay(velocity.y, velocityDecay)
             }
+            velocityTracker.resetTracking()
         }
         shouldFling = true
 
