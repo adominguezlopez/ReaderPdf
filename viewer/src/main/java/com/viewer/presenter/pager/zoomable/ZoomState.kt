@@ -120,12 +120,29 @@ class ZoomState(
     /**
      * Reset the scale and the offsets.
      */
-    suspend fun reset() = coroutineScope {
-        launch { _scale.snapTo(1f) }
-        _offsetX.updateBounds(0f, 0f)
-        launch { _offsetX.snapTo(0f) }
-        _offsetY.updateBounds(0f, 0f)
-        launch { _offsetY.snapTo(0f) }
+    suspend fun reset(animate: Boolean = false) = coroutineScope {
+        if (animate) {
+            launch {
+                _scale.animateTo(1f)
+            }
+
+            launch {
+                _offsetX.animateTo(0f)
+                _offsetX.updateBounds(0f, 0f)
+            }
+
+            launch {
+                _offsetY.animateTo(0f)
+                _offsetY.updateBounds(0f, 0f)
+            }
+        } else {
+            launch { _scale.snapTo(1f) }
+            _offsetX.updateBounds(0f, 0f)
+            launch { _offsetX.snapTo(0f) }
+            _offsetY.updateBounds(0f, 0f)
+            launch { _offsetY.snapTo(0f) }
+        }
+
     }
 
     private var shouldConsumeEvent: Boolean? = null
@@ -217,6 +234,27 @@ class ZoomState(
             launch {
                 _scale.animateTo(1f)
             }
+        }
+    }
+
+    internal suspend fun animateZoomTo(zoom: Float, offset: Offset) = coroutineScope {
+        launch {
+            _scale.animateTo(zoom)
+        }
+
+        val boundX = java.lang.Float.max((fitContentSize.width * zoom - layoutSize.width), 0f) / 2f
+        _offsetX.updateBounds(-boundX, boundX)
+        launch {
+            val positionX = -(offset.x - boundX) - (fitContentSize.width - layoutSize.width)
+            _offsetX.animateTo(positionX)
+        }
+
+        val boundY =
+            java.lang.Float.max((fitContentSize.height * zoom - layoutSize.height), 0f) / 2f
+        _offsetY.updateBounds(-boundY, boundY)
+        launch {
+            val positionY = -(offset.y - boundY) - (fitContentSize.height - layoutSize.height)
+            _offsetY.animateTo(positionY)
         }
     }
 }

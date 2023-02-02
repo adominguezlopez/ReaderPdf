@@ -133,6 +133,19 @@ fun Modifier.zoomable(zoomState: ZoomState): Modifier = composed(
         .onSizeChanged { size ->
             zoomState.setLayoutSize(size.toSize())
         }
+        .pointerInput(Unit){
+            detectTapGestures(onDoubleTap = { tapOffset ->
+                if (zoomState.scale > 1f) {
+                    scope.launch {
+                        zoomState.reset(animate = true)
+                    }
+                } else {
+                    scope.launch {
+                        zoomState.animateZoomTo(2f, tapOffset)
+                    }
+                }
+            })
+        }
         .pointerInput(Unit) {
             detectTransformGestures(
                 onGestureStart = { zoomState.startGesture() },
