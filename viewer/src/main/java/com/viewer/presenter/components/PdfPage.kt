@@ -3,9 +3,11 @@ package com.viewer.presenter.components
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -45,24 +47,26 @@ fun PdfSinglePage(
     val scope = rememberCoroutineScope()
 
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var zoomedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var core by remember { mutableStateOf<PDFCore?>(null) }
 
     DisposableEffect(pdfFile) {
         val job = scope.launch(Dispatchers.IO) {
-            val core = run {
+            core = run {
                 val document = PDFDocument.openDocument(pdfFile.file.absolutePath) as PDFDocument
                 document.authenticatePassword(pdfFile.password)
                 PDFCore(document)
             }
 
-            val pageOriginalSize = core.getPageSize(page)
+            val pageOriginalSize = core!!.getPageSize(page)
             val aspectRatio = pageOriginalSize.x / pageOriginalSize.y
 
             val (width, height) = (pagerSize.width to (pagerSize.width / aspectRatio).toInt())
 
             val tmpBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
-            core.drawPage(
-                tmpBitmap, page, width, height, 0, 0, width, height, Cookie()
+            core!!.drawPage(
+                tmpBitmap, page, width, height, 0, 0, Cookie()
             )
 
             bitmap = tmpBitmap
@@ -75,23 +79,60 @@ fun PdfSinglePage(
     }
 
     bitmap?.let {
-        val zoomState = rememberZoomState(contentSize = Size(it.width.toFloat(), it.height.toFloat()))
-        Image(
-            bitmap = it.asImageBitmap(),
-            contentDescription = "Zoomable image",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.background(Color.Gray).fillMaxSize().zoomable(zoomState)
-        )
+        Box(modifier = Modifier.background(Color.Red)) {
+            val zoomState = rememberZoomState(contentSize = Size(it.width.toFloat(), it.height.toFloat()))
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = "Zoomable image",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .background(Color.Gray)
+                    .fillMaxSize()
+                    .zoomable(zoomState)
+            )
 
-        // Reset zoom state when the page is moved out of the window.
-        val isVisible by remember {
-            derivedStateOf {
-                pagerState.isVisibleForPage(position)
+            // Reset zoom state when the page is moved out of the window.
+            val isVisible by remember {
+                derivedStateOf {
+                    pagerState.isVisibleForPage(position)
+                }
             }
-        }
-        LaunchedEffect(isVisible) {
-            if (!isVisible) {
-                zoomState.reset()
+            LaunchedEffect(isVisible) {
+                if (!isVisible) {
+                    zoomState.reset()
+                }
+            }
+
+            DisposableEffect(zoomState.isDragInProgress) {
+                if (!zoomState.isDragInProgress && zoomState.scale > 1f){
+                    val tmpBitmap = Bitmap.createBitmap(pagerSize.width, pagerSize.height, Bitmap.Config.ARGB_8888)
+
+                    core!!.drawPage(
+                        tmpBitmap, page, pagerSize.width, pagerSize.height, 0, 0, Cookie()
+                    )
+
+                    zoomedBitmap = tmpBitmap
+                }
+                onDispose {
+                    /*
+                    if (zoomState.isDragInProgress) {
+                        zoomedBitmap?.recycle()
+                        zoomedBitmap = null
+                    }
+                     */
+                    zoomedBitmap = null
+                }
+            }
+
+            zoomedBitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = "Zoomable image",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .alpha(0.5f)
+                        .background(Color.Red)
+                )
             }
         }
     }

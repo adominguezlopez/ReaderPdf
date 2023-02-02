@@ -18,11 +18,8 @@ package com.viewer.presenter.pager.zoomable
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.exponentialDecay
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -43,7 +40,7 @@ import kotlin.math.abs
 class ZoomState(
     @FloatRange(from = 1.0) private val maxScale: Float = 5f,
     private var contentSize: Size = Size.Zero,
-    private val velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
+    private val absVelocityThreshold: Float = 20f
 ) {
     init {
         require(maxScale >= 1.0f) { "maxScale must be at least 1.0." }
@@ -73,6 +70,9 @@ class ZoomState(
         get() = _offsetY.value
 
     private var layoutSize = Size.Zero
+
+    internal var isDragInProgress by mutableStateOf(false)
+        private set
     /**
      * Set composable layout size.
      *
@@ -148,6 +148,7 @@ class ZoomState(
     private var shouldConsumeEvent: Boolean? = null
 
     internal fun startGesture() {
+        isDragInProgress = true
         shouldConsumeEvent = null
     }
 
@@ -222,10 +223,10 @@ class ZoomState(
         if (shouldFling) {
             val velocity = velocityTracker.calculateVelocity()
             launch {
-                _offsetX.animateDecay(velocity.x, velocityDecay)
+                _offsetX.animateDecay(velocity.x, exponentialDecay(absVelocityThreshold = absVelocityThreshold))
             }
             launch {
-                _offsetY.animateDecay(velocity.y, velocityDecay)
+                _offsetY.animateDecay(velocity.y, exponentialDecay(absVelocityThreshold = absVelocityThreshold))
             }
             velocityTracker.resetTracking()
         }
@@ -236,9 +237,12 @@ class ZoomState(
                 _scale.animateTo(1f)
             }
         }
+    }.apply {
+        isDragInProgress = false
     }
 
     internal suspend fun animateZoomTo(zoom: Float, offset: Offset) = coroutineScope {
+        isDragInProgress = true
         launch {
             _scale.animateTo(zoom)
         }
@@ -257,6 +261,8 @@ class ZoomState(
             val positionY = -(offset.y - boundY) - (fitContentSize.height - layoutSize.height)
             _offsetY.animateTo(positionY)
         }
+    }.apply {
+        isDragInProgress = false
     }
 }
 
@@ -272,7 +278,6 @@ class ZoomState(
 fun rememberZoomState(
     @FloatRange(from = 1.0) maxScale: Float = 5f,
     contentSize: Size = Size.Zero,
-    velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
 ) = remember {
-    ZoomState(maxScale, contentSize, velocityDecay)
+    ZoomState(maxScale, contentSize)
 }
