@@ -6,8 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -24,6 +24,7 @@ import com.viewer.presenter.pager.zoomable.rememberZoomState
 import com.viewer.presenter.pager.zoomable.zoomable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.min
 
 @Composable
 fun PdfPageUrl(
@@ -79,8 +80,14 @@ fun PdfSinglePage(
     }
 
     bitmap?.let {
-        Box(modifier = Modifier.background(Color.Red)) {
-            val zoomState = rememberZoomState(contentSize = Size(it.width.toFloat(), it.height.toFloat()))
+        Box(
+            contentAlignment = Alignment.Center
+        ) {
+            val zoomState =
+                rememberZoomState(
+                    contentSize = Size(it.width.toFloat(), it.height.toFloat()),
+                    maxScale = 50f
+                )
             Image(
                 bitmap = it.asImageBitmap(),
                 contentDescription = "Zoomable image",
@@ -104,11 +111,27 @@ fun PdfSinglePage(
             }
 
             DisposableEffect(zoomState.isDragInProgress) {
-                if (!zoomState.isDragInProgress && zoomState.scale > 1f){
-                    val tmpBitmap = Bitmap.createBitmap(pagerSize.width, pagerSize.height, Bitmap.Config.ARGB_8888)
+                if (!zoomState.isDragInProgress && zoomState.scale > 1f) {
+                    val tmpBitmap = Bitmap.createBitmap(
+                        min(
+                            (bitmap!!.width * zoomState.scale).toInt(),
+                            pagerSize.width
+                        ),
+                        min((bitmap!!.height * zoomState.scale).toInt(), pagerSize.height),
+                        Bitmap.Config.ARGB_8888
+                    )
+
+                    val posX = zoomState.boundsX - zoomState.offsetX
+                    val posY = zoomState.boundsY - zoomState.offsetY
 
                     core!!.drawPage(
-                        tmpBitmap, page, pagerSize.width, pagerSize.height, 0, 0, Cookie()
+                        tmpBitmap,
+                        page,
+                        (bitmap!!.width * zoomState.scale).toInt(),
+                        (bitmap!!.height * zoomState.scale).toInt(),
+                        posX.toInt(),
+                        posY.toInt(),
+                        Cookie()
                     )
 
                     zoomedBitmap = tmpBitmap
@@ -128,10 +151,7 @@ fun PdfSinglePage(
                 Image(
                     bitmap = it.asImageBitmap(),
                     contentDescription = "Zoomable image",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .alpha(0.5f)
-                        .background(Color.Red)
+                    contentScale = ContentScale.Fit
                 )
             }
         }

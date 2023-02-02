@@ -62,6 +62,12 @@ class ZoomState(
     val offsetX: Float
         get() = _offsetX.value
 
+    val boundsX: Float
+        get() = abs(_offsetX.lowerBound ?: 0f)
+
+    val boundsY: Float
+        get() = abs(_offsetY.lowerBound ?: 0f)
+
     private var _offsetY = Animatable(0f)
     /**
      * The vertical offset of the content.
@@ -276,7 +282,7 @@ class ZoomState(
  */
 @Composable
 fun rememberZoomState(
-    @FloatRange(from = 1.0) maxScale: Float = 5f,
+    @FloatRange(from = 1.0) maxScale: Float = 6f,
     contentSize: Size = Size.Zero,
 ) = remember {
     ZoomState(maxScale, contentSize)
