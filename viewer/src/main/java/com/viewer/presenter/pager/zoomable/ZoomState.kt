@@ -40,7 +40,8 @@ import kotlin.math.abs
 class ZoomState(
     @FloatRange(from = 1.0) private val maxScale: Float = 5f,
     private var contentSize: Size = Size.Zero,
-    private val absVelocityThreshold: Float = 20f
+    private val absVelocityThreshold: Float = 40f,
+    private val frictionMultiplier: Float = 2f
 ) {
     init {
         require(maxScale >= 1.0f) { "maxScale must be at least 1.0." }
@@ -77,8 +78,11 @@ class ZoomState(
 
     private var layoutSize = Size.Zero
 
-    internal var isDragInProgress by mutableStateOf(false)
-        private set
+    private var _isDragInProgress by mutableStateOf(false)
+
+    val isSettled: Boolean
+        get() = !_isDragInProgress && !_scale.isRunning && !_offsetX.isRunning && !_offsetY.isRunning
+
     /**
      * Set composable layout size.
      *
@@ -153,9 +157,14 @@ class ZoomState(
 
     private var shouldConsumeEvent: Boolean? = null
 
-    internal fun startGesture() {
-        isDragInProgress = true
+    internal suspend fun startGesture() = coroutineScope {
         shouldConsumeEvent = null
+        velocityTracker.resetTracking()
+        launch {
+            _scale.stop()
+            _offsetX.stop()
+            _offsetY.stop()
+        }
     }
 
     internal fun canConsumeGesture(pan: Offset, zoom: Float): Boolean {
@@ -202,17 +211,19 @@ class ZoomState(
         position: Offset,
         timeMillis: Long
     ) = coroutineScope {
+        _isDragInProgress = true
+        val targetZoom = _scale.value * zoom
         launch {
-            _scale.snapTo(_scale.value * zoom)
+            _scale.snapTo(targetZoom)
         }
 
-        val boundX = java.lang.Float.max((fitContentSize.width * _scale.value - layoutSize.width), 0f) / 2f
+        val boundX = java.lang.Float.max((fitContentSize.width * targetZoom - layoutSize.width), 0f) / 2f
         _offsetX.updateBounds(-boundX, boundX)
         launch {
             _offsetX.snapTo(_offsetX.value + pan.x)
         }
 
-        val boundY = java.lang.Float.max((fitContentSize.height * _scale.value - layoutSize.height), 0f) / 2f
+        val boundY = java.lang.Float.max((fitContentSize.height * targetZoom - layoutSize.height), 0f) / 2f
         _offsetY.updateBounds(-boundY, boundY)
         launch {
             _offsetY.snapTo(_offsetY.value + pan.y)
@@ -229,10 +240,10 @@ class ZoomState(
         if (shouldFling) {
             val velocity = velocityTracker.calculateVelocity()
             launch {
-                _offsetX.animateDecay(velocity.x, exponentialDecay(absVelocityThreshold = absVelocityThreshold))
+                _offsetX.animateDecay(velocity.x, exponentialDecay(absVelocityThreshold = absVelocityThreshold, frictionMultiplier = frictionMultiplier))
             }
             launch {
-                _offsetY.animateDecay(velocity.y, exponentialDecay(absVelocityThreshold = absVelocityThreshold))
+                _offsetY.animateDecay(velocity.y, exponentialDecay(absVelocityThreshold = absVelocityThreshold, frictionMultiplier = frictionMultiplier))
             }
             velocityTracker.resetTracking()
         }
@@ -244,11 +255,10 @@ class ZoomState(
             }
         }
     }.apply {
-        isDragInProgress = false
+        _isDragInProgress = false
     }
 
     internal suspend fun animateZoomTo(zoom: Float, offset: Offset) = coroutineScope {
-        isDragInProgress = true
         launch {
             _scale.animateTo(zoom)
         }
@@ -267,8 +277,6 @@ class ZoomState(
             val positionY = -(offset.y - boundY) - (fitContentSize.height - layoutSize.height)
             _offsetY.animateTo(positionY)
         }
-    }.apply {
-        isDragInProgress = false
     }
 }
 

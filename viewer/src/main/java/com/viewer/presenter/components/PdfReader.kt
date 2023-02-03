@@ -8,7 +8,6 @@ import androidx.compose.ui.unit.IntSize
 import com.viewer.presenter.pager.HorizontalPager
 import com.viewer.presenter.pager.pdf.PdfReaderPage
 import com.viewer.presenter.pager.pdf.PdfReaderState
-import com.viewer.presenter.pager.rememberPagerState
 
 @Composable
 fun PdfReader(
@@ -16,28 +15,20 @@ fun PdfReader(
     doublePage: Boolean,
     rtl: Boolean = false,
 ) {
-    val pagerState = rememberPagerState()
-    var pagerSize by remember { mutableStateOf(IntSize.Zero) }
-
     HorizontalPager(
         count = readerState.pageCount,
-        state = pagerState,
+        state = readerState.pagerState,
         reverseLayout = rtl,
         modifier = Modifier
             .fillMaxSize()
-            .onSizeChanged { pagerSize = it }
+            .onSizeChanged { readerState.readerSize = it }
     ) { position ->
-        if (pagerSize != IntSize.Zero) {
+        if (readerState.readerSize != IntSize.Zero) {
             when (val page = readerState.pages[position]) {
                 PdfReaderPage.Empty -> {
                 }
                 is PdfReaderPage.PdfFile -> {
-                    PdfSinglePage(page, this, pagerSize, position)
-                }
-                is PdfReaderPage.Url -> {
-                    PdfPageUrl(
-                        page.url
-                    )
+                    PdfSinglePage(page, readerState, position)
                 }
             }
         }

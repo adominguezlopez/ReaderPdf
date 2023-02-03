@@ -148,7 +148,11 @@ fun Modifier.zoomable(zoomState: ZoomState): Modifier = composed(
         }
         .pointerInput(Unit) {
             detectTransformGestures(
-                onGestureStart = { zoomState.startGesture() },
+                onGestureStart = {
+                    scope.launch {
+                        zoomState.startGesture()
+                    }
+                },
                 onGesture = { centroid, pan, zoom, _, timeMillis ->
                     val canConsume = zoomState.canConsumeGesture(pan = pan, zoom = zoom)
                     if (canConsume) {

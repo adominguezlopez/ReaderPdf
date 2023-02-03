@@ -8,153 +8,179 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.IntSize
-import coil.compose.AsyncImage
 import com.artifex.mupdf.fitz.Cookie
 import com.artifex.mupdf.fitz.PDFDocument
 import com.viewer.PDFCore
-import com.viewer.presenter.pager.PagerScope
-import com.viewer.presenter.pager.calculateCurrentOffsetForPage
+import com.viewer.presenter.pager.PagerState
 import com.viewer.presenter.pager.pdf.PdfReaderPage
-import com.viewer.presenter.pager.zoomable.rememberZoomState
+import com.viewer.presenter.pager.pdf.PdfReaderState
 import com.viewer.presenter.pager.zoomable.zoomable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
 @Composable
-fun PdfPageUrl(
-    url: String
-) {
-    AsyncImage(
-        modifier = Modifier.fillMaxSize(),
-        model = url,
-        contentDescription = null
-    )
-}
-
-@Composable
 fun PdfSinglePage(
     pdfFile: PdfReaderPage.PdfFile,
-    pagerState: PagerScope,
-    pagerSize: IntSize,
-    position: Int
+    readerState: PdfReaderState,
+    position: Int,
 ) {
-    val page = 0
     val scope = rememberCoroutineScope()
-
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var zoomedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val state = rememberPdfPageState(scope)
     var core by remember { mutableStateOf<PDFCore?>(null) }
 
     DisposableEffect(pdfFile) {
         val job = scope.launch(Dispatchers.IO) {
-            core = run {
-                val document = PDFDocument.openDocument(pdfFile.file.absolutePath) as PDFDocument
-                document.authenticatePassword(pdfFile.password)
-                PDFCore(document)
-            }
-
-            val pageOriginalSize = core!!.getPageSize(page)
-            val aspectRatio = pageOriginalSize.x / pageOriginalSize.y
-
-            val (width, height) = (pagerSize.width to (pagerSize.width / aspectRatio).toInt())
-
-            val tmpBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-
-            core!!.drawPage(
-                tmpBitmap, page, width, height, 0, 0, Cookie()
-            )
-
-            bitmap = tmpBitmap
+            val document = PDFDocument.openDocument(pdfFile.file.absolutePath) as PDFDocument
+            pdfFile.password?.let { document.authenticatePassword(it) }
+            core = PDFCore(document)
         }
         onDispose {
             job.cancel()
-            bitmap?.recycle()
-            bitmap = null
+            core?.destroy()
+            state.clear() // TODO needed?
+            core = null
         }
     }
 
-    bitmap?.let {
-        Box(
-            contentAlignment = Alignment.Center
-        ) {
-            val zoomState =
-                rememberZoomState(
-                    contentSize = Size(it.width.toFloat(), it.height.toFloat()),
-                    maxScale = 50f
-                )
-            Image(
-                bitmap = it.asImageBitmap(),
-                contentDescription = "Zoomable image",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .background(Color.Gray)
-                    .fillMaxSize()
-                    .zoomable(zoomState)
+    val currentCore = core
+    if (currentCore != null) {
+        Box(contentAlignment = Alignment.Center) {
+            PdfEntireSinglePage(
+                state = state,
+                readerState = readerState,
+                core = currentCore,
+                position = position
             )
+            PdfZoomedSinglePage(
+                state = state,
+                readerState = readerState,
+                core = currentCore
+            )
+        }
+    }
+}
 
-            // Reset zoom state when the page is moved out of the window.
-            val isVisible by remember {
-                derivedStateOf {
-                    pagerState.isVisibleForPage(position)
-                }
-            }
-            LaunchedEffect(isVisible) {
-                if (!isVisible) {
-                    zoomState.reset()
-                }
-            }
+@Composable
+private fun PdfEntireSinglePage(
+    state: PdfPageState,
+    readerState: PdfReaderState,
+    core: PDFCore,
+    position: Int,
+    pageToLoad: Int = 0
+) {
+    DisposableEffect(core) {
+        val job = state.scope.launch(Dispatchers.IO) {
+            val pdfPageSize = core.getPageSize(pageToLoad)
+            val aspectRatio = pdfPageSize.x / pdfPageSize.y
+            val readerSize = readerState.readerSize
+            val (width, height) = (readerSize.width to (readerSize.width / aspectRatio).toInt())
 
-            DisposableEffect(zoomState.isDragInProgress) {
-                if (!zoomState.isDragInProgress && zoomState.scale > 1f) {
-                    val tmpBitmap = Bitmap.createBitmap(
-                        min(
-                            (bitmap!!.width * zoomState.scale).toInt(),
-                            pagerSize.width
-                        ),
-                        min((bitmap!!.height * zoomState.scale).toInt(), pagerSize.height),
-                        Bitmap.Config.ARGB_8888
-                    )
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            core.drawPage(bitmap, pageToLoad, width, height, 0, 0, Cookie())
 
-                    val posX = zoomState.boundsX - zoomState.offsetX
-                    val posY = zoomState.boundsY - zoomState.offsetY
+            state.updateEntireBitmap(bitmap)
+        }
+        onDispose {
+            job.cancel()
+            state.disposeEntireBitmap()
+        }
+    }
 
-                    core!!.drawPage(
-                        tmpBitmap,
-                        page,
-                        (bitmap!!.width * zoomState.scale).toInt(),
-                        (bitmap!!.height * zoomState.scale).toInt(),
-                        posX.toInt(),
-                        posY.toInt(),
-                        Cookie()
-                    )
+    val currentBitmap = state.entireBitmap
+    val currentZoomState = state.zoomState
+    if (currentBitmap != null && currentZoomState != null) {
+        Image(
+            bitmap = currentBitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .background(Color.Gray)
+                .fillMaxSize()
+                .zoomable(currentZoomState)
+        )
 
-                    zoomedBitmap = tmpBitmap
-                }
-                onDispose {
-                    /*
-                    if (zoomState.isDragInProgress) {
-                        zoomedBitmap?.recycle()
-                        zoomedBitmap = null
-                    }
-                     */
-                    zoomedBitmap = null
-                }
-            }
-
-            zoomedBitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = "Zoomable image",
-                    contentScale = ContentScale.Fit
-                )
+        // Reset zoom state when the page is moved out of the window.
+        val isVisible by remember {
+            derivedStateOf {
+                readerState.pagerState.isVisibleForPage(position)
             }
         }
+        LaunchedEffect(isVisible) {
+            if (!isVisible) {
+                currentZoomState.reset()
+            }
+        }
+    }
+}
+
+@Composable
+fun PdfZoomedSinglePage(
+    state: PdfPageState,
+    readerState: PdfReaderState,
+    core: PDFCore,
+    pageToLoad: Int = 0
+) {
+    val currentZoomState = state.zoomState ?: return
+    val currentEntireBitmap = state.entireBitmap ?: return
+    if (currentZoomState.scale <= 1f) return
+
+    DisposableEffect(currentZoomState.isSettled) {
+        val job = state.scope.launch(Dispatchers.IO) {
+            delay(100)
+            if (currentZoomState.isSettled && currentZoomState.scale > 1f) {
+                val bitmap = Bitmap.createBitmap(
+                    min(
+                        (currentEntireBitmap.width * currentZoomState.scale).toInt(),
+                        readerState.readerSize.width
+                    ),
+                    min(
+                        (currentEntireBitmap.height * currentZoomState.scale).toInt(),
+                        readerState.readerSize.height
+                    ),
+                    Bitmap.Config.ARGB_8888
+                )
+
+                val posX = currentZoomState.boundsX - currentZoomState.offsetX
+                val posY = currentZoomState.boundsY - currentZoomState.offsetY
+
+                core.drawPage(
+                    bitmap,
+                    pageToLoad,
+                    (currentEntireBitmap.width * currentZoomState.scale).toInt(),
+                    (currentEntireBitmap.height * currentZoomState.scale).toInt(),
+                    posX.toInt(),
+                    posY.toInt(),
+                    Cookie()
+                )
+
+                state.updateZoomedBitmap(bitmap)
+            }
+        }
+        onDispose {
+            /*
+            if (zoomState.isDragInProgress) {
+                zoomedBitmap?.recycle()
+                zoomedBitmap = null
+            }
+             */
+            job.cancel()
+            state.disposeZoomedBitmap()
+        }
+    }
+
+    val currentZoomedBitmap = state.zoomedBitmap
+    if (currentZoomedBitmap != null) {
+        Image(
+            bitmap = currentZoomedBitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            alpha = 0.8f
+        )
     }
 }
 
@@ -172,7 +198,7 @@ fun PdfDoublePage(
  * @param page Page index to be determined.
  * @return true if the page is visible.
  */
-fun PagerScope.isVisibleForPage(page: Int): Boolean {
-    val offset = calculateCurrentOffsetForPage(page)
+fun PagerState.isVisibleForPage(page: Int): Boolean {
+    val offset = (currentPage - page) + currentPageOffset
     return (-1.0f < offset) and (offset < 1.0f)
 }
