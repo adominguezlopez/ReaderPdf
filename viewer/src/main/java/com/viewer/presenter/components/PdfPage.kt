@@ -178,8 +178,7 @@ fun PdfZoomedSinglePage(
         Image(
             bitmap = currentZoomedBitmap.asImageBitmap(),
             contentDescription = null,
-            contentScale = ContentScale.Fit,
-            alpha = 0.8f
+            contentScale = ContentScale.Fit
         )
     }
 }
