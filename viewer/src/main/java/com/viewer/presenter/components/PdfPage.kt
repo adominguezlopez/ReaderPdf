@@ -76,9 +76,16 @@ private fun PdfEntireSinglePage(
     LaunchedEffect(core) {
         val bitmap = withContext(Dispatchers.IO) {
             val pdfPageSize = core.getPageSize(pageToLoad)
-            val aspectRatio = pdfPageSize.x / pdfPageSize.y
             val readerSize = readerState.readerSize
-            val (width, height) = (readerSize.width to (readerSize.width / aspectRatio).toInt())
+
+            val aspectRatioReader = readerSize.width / readerSize.height
+            val aspectRatioPage = pdfPageSize.x / pdfPageSize.y
+
+            val (width, height) = if (aspectRatioReader < aspectRatioPage) {
+                readerSize.width to (readerSize.width / aspectRatioPage).toInt()
+            } else {
+                (readerSize.height * aspectRatioPage).toInt() to readerSize.height
+            }
 
             Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
                 core.drawPage(this, pageToLoad, width, height, 0, 0, Cookie())
