@@ -21,6 +21,9 @@ class PdfPageState(
     fun clear() {
         entireBitmap?.recycle()
         zoomedBitmap?.recycle()
+        entireBitmap = null
+        zoomedBitmap = null
+        zoomState = null
     }
 
     fun updateEntireBitmap(bitmap: Bitmap) {
@@ -29,12 +32,6 @@ class PdfPageState(
             contentSize = IntSize(bitmap.width, bitmap.height).toSize()
         )
         entireBitmap = bitmap
-    }
-
-    fun disposeEntireBitmap() {
-        entireBitmap?.recycle()
-        entireBitmap = null
-        zoomState = null
     }
 
     fun updateZoomedBitmap(bitmap: Bitmap) {
@@ -50,6 +47,7 @@ class PdfPageState(
         return if (current != null && current.width == width && current.height == height) {
             current
         } else {
+            _zoomedBitmap = null
             current?.recycle()
             Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
                 _zoomedBitmap = this

@@ -8,7 +8,7 @@ import java.io.*
 fun copyAssets(context: Context) {
     val folder = File("${context.cacheDir.absolutePath}/assets")
     if (folder.exists())
-        folder.delete()
+        return
     folder.mkdirs()
     val assetManager: AssetManager = context.assets
     try {
