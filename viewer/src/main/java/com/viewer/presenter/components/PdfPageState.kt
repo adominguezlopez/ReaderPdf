@@ -15,6 +15,7 @@ class PdfPageState(
     var entireBitmap by mutableStateOf<Bitmap?>(null)
     var zoomedBitmap by mutableStateOf<Bitmap?>(null)
     var zoomState by mutableStateOf<ZoomState?>(null)
+    private var _zoomedBitmap: Bitmap? = null
 
     // TODO needed?
     fun clear() {
@@ -42,6 +43,18 @@ class PdfPageState(
 
     fun disposeZoomedBitmap() {
         zoomedBitmap = null
+    }
+
+    fun getZoomedBitmap(width: Int, height: Int): Bitmap {
+        val current = _zoomedBitmap
+        return if (current != null && current.width == width && current.height == height) {
+            current
+        } else {
+            current?.recycle()
+            Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+                _zoomedBitmap = this
+            }
+        }
     }
 }
 

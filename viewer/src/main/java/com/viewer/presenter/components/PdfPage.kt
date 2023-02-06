@@ -132,17 +132,17 @@ fun PdfZoomedSinglePage(
     DisposableEffect(currentZoomState.isSettled) {
         val job = state.scope.launch(Dispatchers.IO) {
             if (currentZoomState.isSettled && currentZoomState.scale > 1f) {
-                val bitmap = Bitmap.createBitmap(
-                    min(
-                        (currentEntireBitmap.width * currentZoomState.scale).toInt(),
-                        readerState.readerSize.width
-                    ),
-                    min(
-                        (currentEntireBitmap.height * currentZoomState.scale).toInt(),
-                        readerState.readerSize.height
-                    ),
-                    Bitmap.Config.ARGB_8888
+
+                val width = min(
+                    (currentEntireBitmap.width * currentZoomState.scale).toInt(),
+                    readerState.readerSize.width
                 )
+                val height = min(
+                    (currentEntireBitmap.height * currentZoomState.scale).toInt(),
+                    readerState.readerSize.height
+                )
+
+                val bitmap = state.getZoomedBitmap(width, height)
 
                 val posX = currentZoomState.boundsX - currentZoomState.offsetX
                 val posY = currentZoomState.boundsY - currentZoomState.offsetY
