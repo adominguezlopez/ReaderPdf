@@ -19,7 +19,7 @@ import com.viewer.presenter.pager.pdf.PdfReaderPage
 import com.viewer.presenter.pager.pdf.PdfReaderState
 import com.viewer.presenter.pager.zoomable.zoomable
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
@@ -131,7 +131,6 @@ fun PdfZoomedSinglePage(
 
     DisposableEffect(currentZoomState.isSettled) {
         val job = state.scope.launch(Dispatchers.IO) {
-            delay(100)
             if (currentZoomState.isSettled && currentZoomState.scale > 1f) {
                 val bitmap = Bitmap.createBitmap(
                     min(
@@ -158,7 +157,9 @@ fun PdfZoomedSinglePage(
                     Cookie()
                 )
 
-                state.updateZoomedBitmap(bitmap)
+                if (isActive) {
+                    state.updateZoomedBitmap(bitmap)
+                }
             }
         }
         onDispose {

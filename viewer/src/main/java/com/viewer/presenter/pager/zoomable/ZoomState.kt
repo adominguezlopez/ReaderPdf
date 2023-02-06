@@ -2,7 +2,6 @@ package com.viewer.presenter.pager.zoomable
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -122,14 +121,14 @@ class ZoomState(
                 _scale.animateTo(1f)
             }
 
+            _offsetX.updateBounds(0f, 0f)
             launch {
                 _offsetX.animateTo(0f)
-                _offsetX.updateBounds(0f, 0f)
             }
 
+            _offsetY.updateBounds(0f, 0f)
             launch {
                 _offsetY.animateTo(0f)
-                _offsetY.updateBounds(0f, 0f)
             }
         } else {
             launch { _scale.snapTo(1f) }
@@ -138,7 +137,6 @@ class ZoomState(
             _offsetY.updateBounds(0f, 0f)
             launch { _offsetY.snapTo(0f) }
         }
-
     }
 
     private var shouldConsumeEvent: Boolean? = null
@@ -243,7 +241,7 @@ class ZoomState(
             launch {
                 _offsetY.animateDecay(velocity.y, exponentialDecay(absVelocityThreshold = absVelocityThreshold, frictionMultiplier = frictionMultiplier))
             }
-            //velocityTracker.resetTracking()
+            velocityTracker.resetTracking()
         }
         shouldFling = true
 
@@ -257,22 +255,33 @@ class ZoomState(
     }
 
     internal suspend fun animateZoomTo(zoom: Float, offset: Offset) = coroutineScope {
-        launch {
-            _scale.animateTo(zoom)
-        }
+        val size = fitContentSize * scale
+        val newScale = (scale * zoom).coerceIn(1f, maxScale)
+        val newSize = fitContentSize * newScale
+        val deltaWidth = newSize.width - size.width
+        val deltaHeight = newSize.height - size.height
 
-        val boundX = max((fitContentSize.width * zoom - layoutSize.width), 0f) / 2f
+        // Position with the origin at the left top corner of the content.
+        val xInContent = offset.x - offsetX + (size.width - layoutSize.width) * 0.5f
+        val yInContent = offset.y - offsetY + (size.height - layoutSize.height) * 0.5f
+        // Offset to zoom the content around the pinch gesture position.
+        val newOffsetX = (deltaWidth * 0.5f) - (deltaWidth * xInContent / size.width)
+        val newOffsetY = (deltaHeight * 0.5f) - (deltaHeight * yInContent / size.height)
+
+        val boundX = max((newSize.width - layoutSize.width), 0f) * 0.5f
         _offsetX.updateBounds(-boundX, boundX)
         launch {
-            val positionX = -(offset.x - boundX) - (fitContentSize.width - layoutSize.width)
-            _offsetX.animateTo(positionX)
+            _offsetX.animateTo(newOffsetX)
         }
 
-        val boundY = max((fitContentSize.height * zoom - layoutSize.height), 0f) / 2f
+        val boundY = max((newSize.height - layoutSize.height), 0f) * 0.5f
         _offsetY.updateBounds(-boundY, boundY)
         launch {
-            val positionY = -(offset.y - boundY) - (fitContentSize.height - layoutSize.height)
-            _offsetY.animateTo(positionY)
+            _offsetY.animateTo(newOffsetY)
+        }
+
+        launch {
+            _scale.animateTo(newScale)
         }
     }
 }
