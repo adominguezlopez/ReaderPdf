@@ -1,34 +1,16 @@
-/*
- * Copyright 2022 usuiat
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.viewer.presenter.pager.zoomable
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.exponentialDecay
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import java.lang.Float.max
 import kotlin.math.abs
 
 /**
@@ -43,7 +25,8 @@ import kotlin.math.abs
 class ZoomState(
     @FloatRange(from = 1.0) private val maxScale: Float = 5f,
     private var contentSize: Size = Size.Zero,
-    private val velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
+    private val absVelocityThreshold: Float = 40f,
+    private val frictionMultiplier: Float = 2f
 ) {
     init {
         require(maxScale >= 1.0f) { "maxScale must be at least 1.0." }
@@ -65,6 +48,12 @@ class ZoomState(
     val offsetX: Float
         get() = _offsetX.value
 
+    val boundsX: Float
+        get() = abs(_offsetX.lowerBound ?: 0f)
+
+    val boundsY: Float
+        get() = abs(_offsetY.lowerBound ?: 0f)
+
     private var _offsetY = Animatable(0f)
     /**
      * The vertical offset of the content.
@@ -73,6 +62,12 @@ class ZoomState(
         get() = _offsetY.value
 
     private var layoutSize = Size.Zero
+
+    private var _isDragInProgress by mutableStateOf(false)
+
+    val isSettled: Boolean
+        get() = !_isDragInProgress && !_scale.isRunning && !_offsetX.isRunning && !_offsetY.isRunning
+
     /**
      * Set composable layout size.
      *
@@ -120,18 +115,40 @@ class ZoomState(
     /**
      * Reset the scale and the offsets.
      */
-    suspend fun reset() = coroutineScope {
-        launch { _scale.snapTo(1f) }
-        _offsetX.updateBounds(0f, 0f)
-        launch { _offsetX.snapTo(0f) }
-        _offsetY.updateBounds(0f, 0f)
-        launch { _offsetY.snapTo(0f) }
+    suspend fun reset(animate: Boolean = false) = coroutineScope {
+        if (animate) {
+            launch {
+                _scale.animateTo(1f)
+            }
+
+            _offsetX.updateBounds(0f, 0f)
+            launch {
+                _offsetX.animateTo(0f)
+            }
+
+            _offsetY.updateBounds(0f, 0f)
+            launch {
+                _offsetY.animateTo(0f)
+            }
+        } else {
+            launch { _scale.snapTo(1f) }
+            _offsetX.updateBounds(0f, 0f)
+            launch { _offsetX.snapTo(0f) }
+            _offsetY.updateBounds(0f, 0f)
+            launch { _offsetY.snapTo(0f) }
+        }
     }
 
     private var shouldConsumeEvent: Boolean? = null
 
-    internal fun startGesture() {
+    internal suspend fun startGesture() = coroutineScope {
         shouldConsumeEvent = null
+        velocityTracker.resetTracking()
+        launch {
+            _scale.stop()
+            _offsetX.stop()
+            _offsetY.stop()
+        }
     }
 
     internal fun canConsumeGesture(pan: Offset, zoom: Float): Boolean {
@@ -178,20 +195,34 @@ class ZoomState(
         position: Offset,
         timeMillis: Long
     ) = coroutineScope {
-        launch {
-            _scale.snapTo(_scale.value * zoom)
-        }
+        _isDragInProgress = true
+        val size = fitContentSize * scale
+        val newScale = (scale * zoom).coerceIn(0.9f, maxScale)
+        val newSize = fitContentSize * newScale
+        val deltaWidth = newSize.width - size.width
+        val deltaHeight = newSize.height - size.height
 
-        val boundX = java.lang.Float.max((fitContentSize.width * _scale.value - layoutSize.width), 0f) / 2f
+        // Position with the origin at the left top corner of the content.
+        val xInContent = position.x - offsetX + (size.width - layoutSize.width) * 0.5f
+        val yInContent = position.y - offsetY + (size.height - layoutSize.height) * 0.5f
+        // Offset to zoom the content around the pinch gesture position.
+        val newOffsetX = (deltaWidth * 0.5f) - (deltaWidth * xInContent / size.width)
+        val newOffsetY = (deltaHeight * 0.5f) - (deltaHeight * yInContent / size.height)
+
+        val boundX = max((newSize.width - layoutSize.width), 0f) * 0.5f
         _offsetX.updateBounds(-boundX, boundX)
         launch {
-            _offsetX.snapTo(_offsetX.value + pan.x)
+            _offsetX.snapTo(offsetX + pan.x + newOffsetX)
         }
 
-        val boundY = java.lang.Float.max((fitContentSize.height * _scale.value - layoutSize.height), 0f) / 2f
+        val boundY = max((newSize.height - layoutSize.height), 0f) * 0.5f
         _offsetY.updateBounds(-boundY, boundY)
         launch {
-            _offsetY.snapTo(_offsetY.value + pan.y)
+            _offsetY.snapTo(offsetY + pan.y + newOffsetY)
+        }
+
+        launch {
+            _scale.snapTo(newScale)
         }
 
         velocityTracker.addPosition(timeMillis, position)
@@ -205,11 +236,12 @@ class ZoomState(
         if (shouldFling) {
             val velocity = velocityTracker.calculateVelocity()
             launch {
-                _offsetX.animateDecay(velocity.x, velocityDecay)
+                _offsetX.animateDecay(velocity.x, exponentialDecay(absVelocityThreshold = absVelocityThreshold, frictionMultiplier = frictionMultiplier))
             }
             launch {
-                _offsetY.animateDecay(velocity.y, velocityDecay)
+                _offsetY.animateDecay(velocity.y, exponentialDecay(absVelocityThreshold = absVelocityThreshold, frictionMultiplier = frictionMultiplier))
             }
+            velocityTracker.resetTracking()
         }
         shouldFling = true
 
@@ -217,6 +249,39 @@ class ZoomState(
             launch {
                 _scale.animateTo(1f)
             }
+        }
+    }.apply {
+        _isDragInProgress = false
+    }
+
+    internal suspend fun animateZoomTo(zoom: Float, offset: Offset) = coroutineScope {
+        val size = fitContentSize * scale
+        val newScale = (scale * zoom).coerceIn(1f, maxScale)
+        val newSize = fitContentSize * newScale
+        val deltaWidth = newSize.width - size.width
+        val deltaHeight = newSize.height - size.height
+
+        // Position with the origin at the left top corner of the content.
+        val xInContent = offset.x - offsetX + (size.width - layoutSize.width) * 0.5f
+        val yInContent = offset.y - offsetY + (size.height - layoutSize.height) * 0.5f
+        // Offset to zoom the content around the pinch gesture position.
+        val newOffsetX = (deltaWidth * 0.5f) - (deltaWidth * xInContent / size.width)
+        val newOffsetY = (deltaHeight * 0.5f) - (deltaHeight * yInContent / size.height)
+
+        val boundX = max((newSize.width - layoutSize.width), 0f) * 0.5f
+        _offsetX.updateBounds(-boundX, boundX)
+        launch {
+            _offsetX.animateTo(newOffsetX)
+        }
+
+        val boundY = max((newSize.height - layoutSize.height), 0f) * 0.5f
+        _offsetY.updateBounds(-boundY, boundY)
+        launch {
+            _offsetY.animateTo(newOffsetY)
+        }
+
+        launch {
+            _scale.animateTo(newScale)
         }
     }
 }
@@ -231,9 +296,8 @@ class ZoomState(
  */
 @Composable
 fun rememberZoomState(
-    @FloatRange(from = 1.0) maxScale: Float = 5f,
+    @FloatRange(from = 1.0) maxScale: Float = 6f,
     contentSize: Size = Size.Zero,
-    velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
 ) = remember {
-    ZoomState(maxScale, contentSize, velocityDecay)
+    ZoomState(maxScale, contentSize)
 }

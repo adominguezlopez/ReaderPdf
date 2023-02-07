@@ -158,7 +158,7 @@ class PageView(
         CoroutineScope(Dispatchers.IO).launch {
             // Render the page in the background
             mCore.drawPage(
-                mEntireBm, page, mSize!!.x, mSize!!.y, 0, 0, mSize!!.x, mSize!!.y, Cookie()
+                mEntireBm, page, mSize!!.x, mSize!!.y, 0, 0, Cookie()
             )
 
             withContext(Dispatchers.Main) {
@@ -331,8 +331,6 @@ class PageView(
                         patchViewSize.y,
                         patchArea.left,
                         patchArea.top,
-                        patchArea.width(),
-                        patchArea.height(),
                         Cookie()
                     )
                 } else {

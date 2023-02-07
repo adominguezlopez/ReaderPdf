@@ -113,7 +113,6 @@ class PDFCore(doc: Document) {
         bm: Bitmap?, pageNum: Int,
         pageW: Int, pageH: Int,
         patchX: Int, patchY: Int,
-        patchW: Int, patchH: Int,
         cookie: Cookie?
     ) {
         gotoPage(pageNum)
@@ -142,7 +141,7 @@ class PDFCore(doc: Document) {
         patchW: Int, patchH: Int,
         cookie: Cookie?
     ) {
-        drawPage(bm, pageNum, pageW, pageH, patchX, patchY, patchW, patchH, cookie)
+        drawPage(bm, pageNum, pageW, pageH, patchX, patchY, cookie)
     }
 
     @Synchronized
