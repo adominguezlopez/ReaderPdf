@@ -2,19 +2,17 @@ package com.viewer.pdf.single
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.artifex.mupdf.fitz.PDFDocument
 import com.viewer.pdf.PdfCore
-import com.viewer.pdf.zoomable.zoomable
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
+import com.viewer.pdf.zoomable.zoomable
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalFoundationApi::class)
