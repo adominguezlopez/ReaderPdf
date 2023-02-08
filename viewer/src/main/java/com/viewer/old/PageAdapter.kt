@@ -1,4 +1,4 @@
-package com.viewer
+package com.viewer.old
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -9,10 +9,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import com.artifex.mupdf.fitz.Link
+import com.viewer.pdf.PdfCore
 import kotlinx.coroutines.*
 import java.util.HashMap
 
-class PageAdapter(private val mContext: Context, private val mCore: PDFCore) : BaseAdapter(),
+class PageAdapter(private val mContext: Context, private val mCore: PdfCore) : BaseAdapter(),
     CoroutineScope by MainScope() {
     private val mPageSizes = HashMap<Int, PointF>()
     private val mLinks = HashMap<Int, Array<Link>?>()

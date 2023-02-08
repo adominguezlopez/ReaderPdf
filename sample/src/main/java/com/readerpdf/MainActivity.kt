@@ -11,20 +11,19 @@ import androidx.compose.material.SnackbarDefaults.backgroundColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.artifex.mupdf.fitz.Buffer
 import com.artifex.mupdf.fitz.PDFDocument
 import com.artifex.mupdf.fitz.Rect
-import com.viewer.PDFCore
-import com.viewer.PageAdapter
-import com.viewer.PageView
-import com.viewer.ReaderView
-import com.viewer.presenter.components.PdfReader
-import com.viewer.presenter.pager.pdf.PdfReaderPage
-import com.viewer.presenter.pager.pdf.rememberPdfReaderState
+import com.viewer.pdf.PdfCore
+import com.viewer.old.PageAdapter
+import com.viewer.old.PageView
+import com.viewer.old.ReaderView
+import com.viewer.pdf.PdfReader
+import com.viewer.pdf.PdfReaderPage
+import com.viewer.pdf.rememberPdfReaderState
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -35,7 +34,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var inernalAssetsFolder: String
 
     private var adapter: PageAdapter? = null
-    private var core: PDFCore? = null
+    private var core: PdfCore? = null
     lateinit var document: PDFDocument
     private lateinit var readerView: ReaderView
 
@@ -92,7 +91,14 @@ class MainActivity : ComponentActivity() {
                         Buttons()
                          */
 
-                        PdfReader(readerState, doublePage = false, rtl = false)
+                        PdfReader(
+                            readerState = readerState,
+                            doublePage = false,
+                            rtl = false,
+                            onLinkClick = {
+                                Log.d("link", "Clicked on link $it")
+                            }
+                        )
                     }
                 })
         }
@@ -189,7 +195,7 @@ class MainActivity : ComponentActivity() {
 
         document = PDFDocument.openDocument(documentFile.absolutePath) as PDFDocument
 
-        core = PDFCore(document)
+        core = PdfCore(document)
         readerView.destroy()
         adapter?.reset()
         adapter = PageAdapter(this, core!!)

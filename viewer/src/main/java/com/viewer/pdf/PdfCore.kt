@@ -1,4 +1,4 @@
-package com.viewer
+package com.viewer.pdf
 
 import android.graphics.Bitmap
 import android.graphics.PointF
@@ -6,7 +6,7 @@ import com.artifex.mupdf.fitz.*
 import kotlin.jvm.Synchronized
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice
 
-class PDFCore(doc: Document) {
+class PdfCore(doc: Document) {
     private var resolution = 0
     private var doc: Document? = null
     private var pageCount = -1

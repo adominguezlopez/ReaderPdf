@@ -1,4 +1,4 @@
-package com.viewer
+package com.viewer.old
 
 import android.content.Context
 import android.content.Intent
@@ -15,6 +15,7 @@ import android.widget.Toast
 import com.artifex.mupdf.fitz.Cookie
 import com.artifex.mupdf.fitz.Link
 import com.artifex.mupdf.fitz.Quad
+import com.viewer.pdf.PdfCore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,7 +31,7 @@ internal class OpaqueImageView(context: Context?) :
 
 class PageView(
     protected val mContext: Context,
-    private val mCore: PDFCore,
+    private val mCore: PdfCore,
     private val mParentSize: Point,
     sharedHqBm: Bitmap?
 ) : ViewGroup(

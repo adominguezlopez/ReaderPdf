@@ -1,4 +1,4 @@
-package com.viewer;
+package com.viewer.old;
 
 import android.content.Context;
 import android.graphics.Point;

@@ -1,4 +1,4 @@
-package com.viewer.presenter.pager.pdf
+package com.viewer.pdf
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState

@@ -1,16 +1,13 @@
-package com.viewer.presenter.components
+package com.viewer.pdf
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
-import com.viewer.presenter.pager.pdf.PdfReaderPage
-import com.viewer.presenter.pager.pdf.PdfReaderState
+import com.viewer.pdf.single.PdfSinglePage
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -18,6 +15,7 @@ fun PdfReader(
     readerState: PdfReaderState,
     doublePage: Boolean,
     rtl: Boolean = false,
+    onLinkClick: (String) -> Unit = {}
 ) {
     HorizontalPager(
         pageCount = readerState.pageCount,
@@ -33,7 +31,12 @@ fun PdfReader(
                 PdfReaderPage.Empty -> {
                 }
                 is PdfReaderPage.PdfFile -> {
-                    PdfSinglePage(page, readerState, position)
+                    PdfSinglePage(
+                        pdfFile = page,
+                        readerState = readerState,
+                        position = position,
+                        onLinkClick = onLinkClick
+                    )
                 }
             }
         }
