@@ -104,9 +104,6 @@ fun Modifier.zoomable(
 ) {
     val scope = rememberCoroutineScope()
     Modifier
-//        .onSizeChanged { size ->
-//            zoomState.setLayoutSize(size.toSize())
-//        }
         .pointerInput(Unit) {
             detectTapGestures(
                 onTap = onTap,
