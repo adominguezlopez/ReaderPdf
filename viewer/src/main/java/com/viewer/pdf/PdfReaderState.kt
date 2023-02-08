@@ -36,5 +36,5 @@ fun rememberPdfReaderState(
 
 sealed class PdfReaderPage {
     object Empty : PdfReaderPage()
-    data class PdfFile(val file: File, val password: String? = null) : PdfReaderPage()
+    data class PdfFile(val file: File, val password: String? = null, val thumbnail: File? = null) : PdfReaderPage()
 }

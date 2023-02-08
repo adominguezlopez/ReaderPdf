@@ -39,8 +39,8 @@ class MainActivity : ComponentActivity() {
                 mutableStateListOf<PdfReaderPage>().apply {
                     val file = File("${cacheDir.absolutePath}/assets")
                     repeat(10) {
-                        val pageFile = "${it.toString().padStart(6, '0')}.pdf"
-                        add(PdfReaderPage.PdfFile(File(file, pageFile), pwd))
+                        val pageFile = it.toString().padStart(6, '0')
+                        add(PdfReaderPage.PdfFile(File(file, "$pageFile.pdf"), pwd, File(file, "$pageFile.jpg")))
                     }
                 }
             }

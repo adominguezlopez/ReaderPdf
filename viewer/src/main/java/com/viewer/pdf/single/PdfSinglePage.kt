@@ -8,11 +8,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
 import com.viewer.pdf.zoomable.zoomable
 import kotlinx.coroutines.*
+import java.io.File
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -47,7 +50,7 @@ fun PdfSinglePage(
     val currentState = state
     if (currentState != null) {
         Box(contentAlignment = Alignment.Center) {
-            PdfEntireSinglePage(state = currentState)
+            PdfEntireSinglePage(state = currentState, pdfFile.thumbnail)
             PdfZoomedSinglePage(state = currentState)
         }
 
@@ -61,8 +64,12 @@ fun PdfSinglePage(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-private fun PdfEntireSinglePage(state: PdfSinglePageState) {
+private fun PdfEntireSinglePage(
+    state: PdfSinglePageState,
+    thumbnail: File?
+) {
     val entireBitmap = state.entireBitmap
     val currentZoomState = state.zoomState
     if (entireBitmap != null) {
@@ -76,6 +83,13 @@ private fun PdfEntireSinglePage(state: PdfSinglePageState) {
                     zoomState = currentZoomState,
                     onTap = state::handleClick
                 )
+        )
+    } else if (thumbnail != null) {
+        GlideImage(
+            model = thumbnail,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
         )
     }
 }
