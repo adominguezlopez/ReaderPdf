@@ -1,4 +1,4 @@
-package com.viewer.presenter.pager.zoomable
+package com.viewer.pdf.zoomable
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable
@@ -169,16 +169,6 @@ class ZoomState(
                             consume = false
                         }
                     }
-                    else if (ratio < 0.33) { // Vertical drag
-                        if ((pan.y < 0) && (_offsetY.value == _offsetY.lowerBound)) {
-                            // Drag bottom to top when bottom edge of the content is shown.
-                            consume = false
-                        }
-                        if ((pan.y > 0) && (_offsetY.value == _offsetY.upperBound)) {
-                            // Drag top to bottom when top edge of the content is shown.
-                            consume = false
-                        }
-                    }
                 }
             }
             shouldConsumeEvent = consume
@@ -233,7 +223,7 @@ class ZoomState(
     }
 
     internal suspend fun endGesture() = coroutineScope {
-        if (shouldFling) {
+        if (shouldConsumeEvent == true && shouldFling) {
             val velocity = velocityTracker.calculateVelocity()
             launch {
                 _offsetX.animateDecay(velocity.x, exponentialDecay(absVelocityThreshold = absVelocityThreshold, frictionMultiplier = frictionMultiplier))
@@ -284,20 +274,11 @@ class ZoomState(
             _scale.animateTo(newScale)
         }
     }
-}
 
-/**
- * Creates a [ZoomState] that is remembered across compositions.
- *
- * @param maxScale The maximum scale of the content.
- * @param contentSize Size of content (i.e. image size.) If Zero, the composable layout size will
- * be used as content size.
- * @param velocityDecay The decay animation spec for fling behaviour.
- */
-@Composable
-fun rememberZoomState(
-    @FloatRange(from = 1.0) maxScale: Float = 6f,
-    contentSize: Size = Size.Zero,
-) = remember {
-    ZoomState(maxScale, contentSize)
+    fun getOffsetInContent(absoluteOffset: Offset): Offset {
+        val size = fitContentSize * scale
+        val xInContent = absoluteOffset.x - offsetX + (size.width - layoutSize.width) * 0.5f
+        val yInContent = absoluteOffset.y - offsetY + (size.height - layoutSize.height) * 0.5f
+        return Offset(xInContent, yInContent)
+    }
 }
