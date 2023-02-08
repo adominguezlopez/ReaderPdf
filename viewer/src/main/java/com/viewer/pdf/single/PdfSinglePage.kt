@@ -8,7 +8,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import com.artifex.mupdf.fitz.PDFDocument
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
@@ -29,9 +28,7 @@ fun PdfSinglePage(
         val scope = MainScope()
         scope.launch {
             val core = withContext(Dispatchers.IO) {
-                val document = PDFDocument.openDocument(pdfFile.file.absolutePath) as PDFDocument
-                pdfFile.password?.let { document.authenticatePassword(it) }
-                PdfCore(document)
+                PdfCore(pdfFile.file, pdfFile.password)
             }
             state = PdfSinglePageState(
                 scope = scope,
