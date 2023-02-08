@@ -15,14 +15,15 @@ fun PdfReader(
     readerState: PdfReaderState,
     doublePage: Boolean,
     rtl: Boolean = false,
-    onLinkClick: (String) -> Unit = {}
+    onLinkClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     HorizontalPager(
         pageCount = readerState.pageCount,
         state = readerState.pagerState,
         reverseLayout = rtl,
         beyondBoundsPageCount = 1,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .onSizeChanged { readerState.readerSize = it }
     ) { position ->
