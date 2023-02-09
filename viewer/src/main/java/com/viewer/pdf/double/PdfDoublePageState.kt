@@ -68,48 +68,12 @@ class PdfDoublePageState(
     init {
         scope.launch {
             val (bitmap, links) = withContext(Dispatchers.IO) {
-                val pdfPageSize1 = core1?.getPageSize(pageToLoad)
-                val pdfPageSize2 = core2?.getPageSize(pageToLoad)
-                val readerSize = readerState.readerSize
-
-                var bitmap1: Bitmap? = null
-                var bitmap2: Bitmap? = null
-                val aspectRatioReader = (readerSize.width / 2) / readerSize.height
-
-                if (pdfPageSize1 != null) {
-                    // calculates screen & pdf aspect ratios
-
-                    val aspectRatioPage1 = pdfPageSize1.x / pdfPageSize1.y
-
-                    // calculates visible width & height dimensions
-                    val (width1, height1) = if (aspectRatioReader < aspectRatioPage1) {
-                        readerSize.width to (readerSize.width / aspectRatioPage1).toInt()
-                    } else {
-                        (readerSize.height * aspectRatioPage1).toInt() to readerSize.height
-                    }
-
-                    bitmap1 = Bitmap.createBitmap(width1, height1, Bitmap.Config.ARGB_8888)
-
-                    bitmap1.apply {
-                        core1?.drawPage(this, pageToLoad, width1, height1, 0, 0, Cookie())
-                    }
+                val bitmap1 = core1?.let {
+                    getPageBitmap(it)
                 }
 
-                if (pdfPageSize2 != null) {
-                    val aspectRatioPage2 = pdfPageSize2.x / pdfPageSize2.y
-
-                    // calculates visible width & height dimensions
-                    val (width2, height2) = if (aspectRatioReader < aspectRatioPage2) {
-                        readerSize.width to (readerSize.width / aspectRatioPage2).toInt()
-                    } else {
-                        (readerSize.height * aspectRatioPage2).toInt() to readerSize.height
-                    }
-
-                    bitmap2 = Bitmap.createBitmap(width2, height2, Bitmap.Config.ARGB_8888)
-
-                    bitmap2.apply {
-                        core2?.drawPage(this, pageToLoad, width2, height2, 0, 0, Cookie())
-                    }
+                val bitmap2 = core2?.let {
+                    getPageBitmap(it)
                 }
 
                 Pair(bitmap1, bitmap2) to listOf<Link>()
@@ -127,6 +91,24 @@ class PdfDoublePageState(
                 ).toSize()
             )
             zoomState.setLayoutSize(readerState.readerSize.toSize())
+        }
+    }
+
+    private fun getPageBitmap(core: PdfCore): Bitmap{
+        val pdfPageSize = core.getPageSize(pageToLoad)
+        val aspectRatioPage = pdfPageSize.x / pdfPageSize.y
+        val readerSize = readerState.readerSize
+        val aspectRatioReader = (readerSize.width / 2) / readerSize.height
+
+        // calculates visible width & height dimensions
+        val (width, height) = if (aspectRatioReader < aspectRatioPage) {
+            readerSize.width to (readerSize.width / aspectRatioPage).toInt()
+        } else {
+            (readerSize.height * aspectRatioPage).toInt() to readerSize.height
+        }
+
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+            core.drawPage(this, pageToLoad, width, height, 0, 0, Cookie())
         }
     }
 
