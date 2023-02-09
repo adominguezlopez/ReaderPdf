@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import com.viewer.pdf.double.PdfDoublePage
 import com.viewer.pdf.single.PdfSinglePage
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -18,22 +19,52 @@ fun PdfReader(
     onLinkClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    HorizontalPager(
-        pageCount = readerState.pageCount,
-        state = readerState.pagerState,
-        reverseLayout = rtl,
-        beyondBoundsPageCount = 1,
-        modifier = modifier
-            .fillMaxSize()
-            .onSizeChanged { readerState.readerSize = it }
-    ) { position ->
-        if (readerState.readerSize != IntSize.Zero) {
-            when (val page = readerState.pages[position]) {
-                PdfReaderPage.Empty -> {
+    if (!doublePage) {
+        HorizontalPager(
+            pageCount = readerState.pageCount,
+            state = readerState.pagerState,
+            reverseLayout = rtl,
+            beyondBoundsPageCount = 1,
+            modifier = modifier
+                .fillMaxSize()
+                .onSizeChanged { readerState.readerSize = it }
+        ) { position ->
+            if (readerState.readerSize != IntSize.Zero) {
+                when (val page = readerState.pages[position]) {
+                    PdfReaderPage.Empty -> {
+                    }
+                    is PdfReaderPage.PdfFile -> {
+
+                        PdfSinglePage(
+                            pdfFile = page,
+                            readerState = readerState,
+                            position = position,
+                            onLinkClick = onLinkClick
+                        )
+                    }
                 }
-                is PdfReaderPage.PdfFile -> {
-                    PdfSinglePage(
-                        pdfFile = page,
+            }
+        }
+    } else {
+        HorizontalPager(
+            pageCount = readerState.pageCount / 2 + 1,
+            state = readerState.pagerState,
+            reverseLayout = rtl,
+            beyondBoundsPageCount = 1,
+            modifier = modifier
+                .fillMaxSize()
+                .onSizeChanged { readerState.readerSize = it }
+        ) { position ->
+            if (readerState.readerSize != IntSize.Zero) {
+                val page1 = readerState.pages.getOrNull(position * 2 - 1)
+                val page2 = readerState.pages.getOrNull(position * 2)
+
+                if (page1 is PdfReaderPage.Empty || page2 is PdfReaderPage.Empty) {
+
+                } else {
+                    PdfDoublePage(
+                        pdfFile1 = page1 as? PdfReaderPage.PdfFile,
+                        pdfFile2 = page2 as? PdfReaderPage.PdfFile,
                         readerState = readerState,
                         position = position,
                         onLinkClick = onLinkClick

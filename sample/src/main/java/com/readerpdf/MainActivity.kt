@@ -1,5 +1,6 @@
 package com.readerpdf
 
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import com.viewer.pdf.PdfReader
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.rememberPdfReaderState
@@ -69,7 +71,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         PdfReader(
                             readerState = readerState,
-                            doublePage = false,
+                            doublePage = LocalConfiguration.current.orientation == ORIENTATION_LANDSCAPE,
                             rtl = false,
                             onLinkClick = {
                                 Log.d("link", "Clicked on link $it")
