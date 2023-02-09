@@ -8,14 +8,20 @@ import androidx.compose.ui.unit.IntSize
 import java.io.File
 
 @Stable
+@OptIn(ExperimentalFoundationApi::class)
 class PdfReaderState(
     val initialPage: Int,
     val pages: SnapshotStateList<PdfReaderPage>
 ) {
-    @OptIn(ExperimentalFoundationApi::class)
     val pagerState = PagerState(initialPage = initialPage)
     val pageCount get() = pages.size
     var readerSize by mutableStateOf(IntSize.Zero)
+
+    val currentPage get() = pagerState.currentPage
+
+    suspend fun setCurrentPage(position: Int) {
+        pagerState.animateScrollToPage(position)
+    }
 }
 
 @Composable
@@ -30,5 +36,5 @@ fun rememberPdfReaderState(
 
 sealed class PdfReaderPage {
     object Empty : PdfReaderPage()
-    data class PdfFile(val file: File, val password: String? = null) : PdfReaderPage()
+    data class PdfFile(val file: File, val password: String? = null, val thumbnail: File? = null) : PdfReaderPage()
 }
