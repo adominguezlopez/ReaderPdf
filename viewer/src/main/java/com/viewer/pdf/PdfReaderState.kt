@@ -11,10 +11,12 @@ import java.io.File
 @OptIn(ExperimentalFoundationApi::class)
 class PdfReaderState(
     val initialPage: Int,
-    val pages: SnapshotStateList<PdfReaderPage>
+    val pages: SnapshotStateList<PdfReaderPage>,
+    val doublePage: Boolean = false,
+    val reverseLayout: Boolean = false
 ) {
-    val pagerState = PagerState(initialPage = initialPage)
-    val pageCount get() = pages.size
+    val pageCount get() = if (doublePage) pages.size / 2 + 1 else pages.size
+    val pagerState = PagerState(initialPage = if (doublePage) initialPage / 2 else initialPage)
     var readerSize by mutableStateOf(IntSize.Zero)
 
     val currentPage get() = pagerState.currentPage
@@ -27,10 +29,17 @@ class PdfReaderState(
 @Composable
 fun rememberPdfReaderState(
     initialPage: Int = 0,
-    pages: SnapshotStateList<PdfReaderPage>
+    pages: SnapshotStateList<PdfReaderPage>,
+    doublePage: Boolean = false,
+    reverseLayout: Boolean = false
 ): PdfReaderState {
     return remember {
-        PdfReaderState(initialPage = initialPage, pages = pages)
+        PdfReaderState(
+            initialPage = initialPage,
+            pages = pages,
+            doublePage = doublePage,
+            reverseLayout = reverseLayout
+        )
     }
 }
 

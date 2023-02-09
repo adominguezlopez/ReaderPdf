@@ -14,16 +14,14 @@ import com.viewer.pdf.single.PdfSinglePage
 @Composable
 fun PdfReader(
     readerState: PdfReaderState,
-    doublePage: Boolean,
-    rtl: Boolean = false,
     onLinkClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    if (!doublePage) {
+    if (!readerState.doublePage) {
         HorizontalPager(
             pageCount = readerState.pageCount,
             state = readerState.pagerState,
-            reverseLayout = rtl,
+            reverseLayout = readerState.reverseLayout,
             beyondBoundsPageCount = 1,
             modifier = modifier
                 .fillMaxSize()
@@ -47,9 +45,9 @@ fun PdfReader(
         }
     } else {
         HorizontalPager(
-            pageCount = readerState.pageCount / 2 + 1,
+            pageCount = readerState.pageCount,
             state = readerState.pagerState,
-            reverseLayout = rtl,
+            reverseLayout = readerState.reverseLayout,
             beyondBoundsPageCount = 1,
             modifier = modifier
                 .fillMaxSize()

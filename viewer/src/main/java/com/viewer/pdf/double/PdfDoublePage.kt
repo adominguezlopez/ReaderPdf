@@ -2,8 +2,7 @@ package com.viewer.pdf.double
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,37 +56,30 @@ fun PdfDoublePage(
     }
 
     val currentState = state
-    if (currentState != null) {
-        Row(
-            modifier = Modifier.zoomable(zoomState = currentState.zoomState)
-        ) {
-            Box(modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)) {
-                if (currentState.entireBitmap1 != null) {
-                    Image(
-                        bitmap = currentState.entireBitmap1!!.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                    )
-                }
-            }
-
-            Box(modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)) {
-                if (currentState.entireBitmap2 != null) {
-                    Image(
-                        bitmap = currentState.entireBitmap2!!.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                    )
-                }
-            }
+    if (currentState?.entireBitmap != null) {
+        Box(contentAlignment = Alignment.Center) {
+            PdfEntireDoublePage(state = currentState)
         }
+    }
+}
+
+@Composable
+private fun PdfEntireDoublePage(
+    state: PdfDoublePageState
+) {
+    val entireBitmap = state.entireBitmap
+    val currentZoomState = state.zoomState
+    if (entireBitmap != null) {
+        Image(
+            bitmap = entireBitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+                .zoomable(
+                    zoomState = currentZoomState,
+                    //onTap = state::handleClick
+                )
+        )
     }
 }
