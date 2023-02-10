@@ -1,5 +1,6 @@
 package com.readerpdf
 
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -8,14 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import com.viewer.pdf.PdfReader
 import com.viewer.pdf.PdfReaderPage
+import com.viewer.pdf.PdfReaderState
 import com.viewer.pdf.rememberPdfReaderState
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.random.Random
@@ -23,7 +25,7 @@ import kotlin.random.nextInt
 
 class MainActivity : ComponentActivity() {
 
-    private val pwd = "q82n3ks92j9sd72bnsldf7823hbzx7"
+    private val pwd = "4826e69ed1a35b923ce91edd06d2ec5527b9d949"
 
     private lateinit var inernalAssetsFolder: String
 
@@ -38,14 +40,32 @@ class MainActivity : ComponentActivity() {
             val list = remember {
                 mutableStateListOf<PdfReaderPage>().apply {
                     val file = File("${cacheDir.absolutePath}/assets")
-                    repeat(10) {
+                    repeat(255) {
                         val pageFile = it.toString().padStart(6, '0')
                         add(PdfReaderPage.PdfFile(File(file, "$pageFile.pdf"), pwd, File(file, "$pageFile.jpg")))
                     }
                 }
             }
             val scope = rememberCoroutineScope()
-            val readerState = rememberPdfReaderState(0, list)
+            val orientation = LocalConfiguration.current.orientation
+            var currentPage by remember { mutableStateOf(0) }
+            val readerState = remember(orientation) {
+                PdfReaderState(
+                    initialPage = currentPage,
+                    pages = list,
+                    doublePage = orientation == ORIENTATION_LANDSCAPE,
+                    reverseLayout = false
+                )
+            }
+            
+            LaunchedEffect(readerState){
+                snapshotFlow {
+                    readerState.currentPage
+                }.collect(){
+                    currentPage = it
+                }
+            }
+
             MaterialTheme(
                 content = {
                     Scaffold(
@@ -69,12 +89,10 @@ class MainActivity : ComponentActivity() {
                     ) {
                         PdfReader(
                             readerState = readerState,
-                            doublePage = false,
-                            rtl = false,
                             onLinkClick = {
                                 Log.d("link", "Clicked on link $it")
                             },
-                            modifier = Modifier.padding(it)
+                            modifier = Modifier.padding(it),
                         )
                     }
                 }
