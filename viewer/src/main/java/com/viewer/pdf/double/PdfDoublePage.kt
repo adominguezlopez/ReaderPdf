@@ -26,7 +26,7 @@ fun PdfDoublePage(
 
     if (pdfFile1 == null && pdfFile2 == null) return
 
-    DisposableEffect(pdfFile1, pdfFile2) {
+    DisposableEffect(position) {
         val scope = MainScope()
         scope.launch {
             val core1 = pdfFile1?.let {
@@ -50,6 +50,7 @@ fun PdfDoublePage(
         }
         onDispose {
             scope.cancel()
+
             state?.dispose()
             state = null
         }
@@ -59,6 +60,7 @@ fun PdfDoublePage(
     if (currentState?.entireBitmap != null) {
         Box(contentAlignment = Alignment.Center) {
             PdfEntireDoublePage(state = currentState)
+            PdfZoomedDoublePage(state = currentState)
         }
     }
 }
@@ -67,6 +69,8 @@ fun PdfDoublePage(
 private fun PdfEntireDoublePage(
     state: PdfDoublePageState
 ) {
+
+
     val entireBitmap = state.entireBitmap
     val currentZoomState = state.zoomState
     if (entireBitmap != null) {
@@ -80,6 +84,30 @@ private fun PdfEntireDoublePage(
                     zoomState = currentZoomState,
                     //onTap = state::handleClick
                 )
+        )
+    }
+}
+
+@Composable
+fun PdfZoomedDoublePage(state: PdfDoublePageState) {
+    val zoomState = state.zoomState
+    if (zoomState.scale <= 1f) return
+
+    DisposableEffect(zoomState.isSettled) {
+        val job = state.refreshZoomedContent()
+        onDispose {
+            //job?.cancel()
+            //state.clearZoomedContent()
+        }
+    }
+
+    val zoomedBitmap = state.zoomedBitmap
+    if (zoomedBitmap != null) {
+        Image(
+            bitmap = zoomedBitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            alpha = 0.5f
         )
     }
 }
