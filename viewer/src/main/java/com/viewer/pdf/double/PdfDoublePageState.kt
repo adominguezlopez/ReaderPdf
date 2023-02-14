@@ -103,7 +103,7 @@ class PdfDoublePageState(
 
             // calculates visible width & height dimensions
             val (width, height) = if (aspectRatioReader < aspectRatioPage) {
-                readerSize.width to (readerSize.width / aspectRatioPage).toInt()
+                readerSize.width/2 to (readerSize.width/2 / aspectRatioPage).toInt()
             } else {
                 (readerSize.height * aspectRatioPage).toInt() to readerSize.height
             }
@@ -119,7 +119,7 @@ class PdfDoublePageState(
 
             // calculates visible width & height dimensions
             val (width, height) = if (aspectRatioReader < aspectRatioPage) {
-                readerSize.width to (readerSize.width / aspectRatioPage).toInt()
+                readerSize.width/2 to (readerSize.width/2 / aspectRatioPage).toInt()
             } else {
                 (readerSize.height * aspectRatioPage).toInt() to readerSize.height
             }
@@ -141,10 +141,10 @@ class PdfDoublePageState(
             else -> throw IllegalStateException("bitmap1 and bitmap2 must not be null")
         }
 
-        val finalBitmap =
+        val mergedBitmap =
             Bitmap.createBitmap(bitmapSize.width, bitmapSize.height, Bitmap.Config.ARGB_8888)
 
-        val canvas = Canvas(finalBitmap)
+        val canvas = Canvas(mergedBitmap)
         if (bitmap1 != null) {
             canvas.drawBitmap(bitmap1, 0f, 0f, null)
         }
@@ -152,7 +152,7 @@ class PdfDoublePageState(
         if (bitmap2 != null) {
             canvas.drawBitmap(
                 bitmap2,
-                ((bitmap1?.width ?: (finalBitmap.width / 2))).toFloat(),
+                ((bitmap1?.width ?: (mergedBitmap.width / 2))).toFloat(),
                 0f,
                 null
             )
@@ -160,7 +160,7 @@ class PdfDoublePageState(
 
         bitmap1?.recycle()
         bitmap2?.recycle()
-        return finalBitmap
+        return mergedBitmap
     }
 
     fun refreshZoomedContent(): Job? {
@@ -214,7 +214,7 @@ class PdfDoublePageState(
                 } else null
             }
 
-            val finalBitmap = withContext(Dispatchers.IO) {
+            val mergedBitmap = withContext(Dispatchers.IO) {
                 val finalBitmap = Bitmap.createBitmap(contentWidth, contentHeight, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(finalBitmap)
                 if (bitmap1 != null) {
@@ -243,7 +243,7 @@ class PdfDoublePageState(
             }
 
             if (isActive) {
-                zoomedBitmap = finalBitmap
+                zoomedBitmap = mergedBitmap
                 //zoomedLinks = links
             }
         }
