@@ -12,10 +12,10 @@ import com.artifex.mupdf.fitz.RectI
 import com.artifex.mupdf.fitz.Rect as RectF
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderState
+import com.viewer.pdf.toRectI
+import com.viewer.pdf.width
 import com.viewer.pdf.zoomable.ZoomState
 import kotlinx.coroutines.*
-import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
@@ -64,12 +64,6 @@ class PdfDoublePageState(
      * Current links of a page scaled to the screen size. Null if not zooming
      */
     private var zoomedLinks by mutableStateOf<List<Link>?>(null)
-
-    /**
-     * Cache to store the last zoomed bitmap that is reused when the dimensions are the same. This
-     * prevents creating a new bitmap on every zoom change
-     */
-    private var lastZoomedBitmap: Bitmap? = null
 
     private var entireRect: RectI? = null
 
@@ -307,20 +301,4 @@ class PdfDoublePageState(
     fun clearZoomedContent() {
         zoomedBitmap = null
     }
-}
-
-fun RectI.width(): Int {
-    return x1 - x0
-}
-
-fun RectI.height(): Int {
-    return y1 - y0
-}
-
-private fun Rect.toRectI(): RectI {
-    return RectI(left, top, right, bottom)
-}
-
-private fun RectF.toRectI(): RectI {
-    return RectI(floor(x0).toInt(), floor(y0).toInt(), ceil(x1).toInt(), ceil(y1).toInt())
 }

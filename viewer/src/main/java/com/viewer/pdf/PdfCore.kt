@@ -5,6 +5,8 @@ import android.graphics.PointF
 import com.artifex.mupdf.fitz.*
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice
 import java.io.File
+import kotlin.math.ceil
+import kotlin.math.floor
 
 class PdfCore(
     file: File,
@@ -89,4 +91,16 @@ class PdfCore(
         gotoPage(pageNum)
         return if (page != null) page!!.links else null
     }
+}
+
+fun RectI.width(): Int {
+    return x1 - x0
+}
+
+fun android.graphics.Rect.toRectI(): RectI {
+    return RectI(left, top, right, bottom)
+}
+
+fun Rect.toRectI(): RectI {
+    return RectI(floor(x0).toInt(), floor(y0).toInt(), ceil(x1).toInt(), ceil(y1).toInt())
 }

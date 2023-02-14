@@ -1,19 +1,24 @@
 package com.viewer.pdf.double
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ContentScale.Companion.FillHeight
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
 import com.viewer.pdf.zoomable.zoomable
 import kotlinx.coroutines.*
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun PdfDoublePage(
     pdfFile1: PdfReaderPage.PdfFile?,
@@ -61,6 +66,35 @@ fun PdfDoublePage(
         Box(contentAlignment = Alignment.Center) {
             PdfEntireDoublePage(state = currentState)
             PdfZoomedDoublePage(state = currentState)
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                if (pdfFile1 != null) {
+                    GlideImage(
+                        model = pdfFile1.thumbnail,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        alignment = Alignment.CenterEnd,
+                        modifier = Modifier
+                            .fillMaxSize()
+                    )
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                if (pdfFile2 != null) {
+                    GlideImage(
+                        model = pdfFile2.thumbnail,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        alignment = Alignment.CenterStart,
+                        modifier = Modifier
+                            .fillMaxSize()
+                    )
+                }
+            }
         }
     }
 }
