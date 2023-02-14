@@ -59,23 +59,25 @@ class PdfCore(
 
     @Synchronized
     fun drawPage(
-        bm: Bitmap?, pageNum: Int,
-        pageW: Int, pageH: Int,
-        patchX: Int, patchY: Int,
-        cookie: Cookie?
+        bitmap: Bitmap,
+        rect: RectI,
+        scaledHeight: Int,
+        pageNum: Int = 0,
     ) {
         gotoPage(pageNum)
         if (displayList == null && page != null) displayList = page!!.toDisplayList()
         if (displayList == null || page == null) return
+
         val zoom = (resolution / 72).toFloat()
         val ctm = Matrix(zoom, zoom)
-        val bbox = RectI(page!!.bounds.transform(ctm))
-        val xscale = pageW.toFloat() / (bbox.x1 - bbox.x0).toFloat()
-        val yscale = pageH.toFloat() / (bbox.y1 - bbox.y0).toFloat()
-        ctm.scale(xscale, yscale)
-        val dev = AndroidDrawDevice(bm, patchX, patchY)
+        val bbox = page!!.bounds.transform(ctm)
+
+        val yscale = scaledHeight.toFloat() / (bbox.y1 - bbox.y0)
+        ctm.scale(yscale)
+
+        val dev = AndroidDrawDevice(bitmap, rect.x0, rect.y0)
         try {
-            displayList!!.run(dev, ctm, cookie)
+            displayList!!.run(dev, ctm, Cookie())
             dev.close()
         } finally {
             dev.destroy()

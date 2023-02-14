@@ -96,8 +96,8 @@ fun PdfZoomedDoublePage(state: PdfDoublePageState) {
     DisposableEffect(zoomState.isSettled) {
         val job = state.refreshZoomedContent()
         onDispose {
-            //job?.cancel()
-            //state.clearZoomedContent()
+            job?.cancel()
+            state.clearZoomedContent()
         }
     }
 
@@ -106,8 +106,7 @@ fun PdfZoomedDoublePage(state: PdfDoublePageState) {
         Image(
             bitmap = zoomedBitmap.asImageBitmap(),
             contentDescription = null,
-            contentScale = ContentScale.Fit,
-            alpha = 0.5f
+            contentScale = ContentScale.Fit
         )
     }
 }
