@@ -14,6 +14,7 @@ import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
 import com.viewer.pdf.zoomable.zoomable
 import kotlinx.coroutines.*
+import java.io.File
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -68,30 +69,34 @@ fun PdfDoublePage(
         Row(
             horizontalArrangement = Arrangement.Center
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                if (pdfFile1 != null) {
-                    GlideImage(
-                        model = pdfFile1.thumbnail,
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        alignment = Alignment.CenterEnd,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    )
-                }
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                if (pdfFile2 != null) {
-                    GlideImage(
-                        model = pdfFile2.thumbnail,
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        alignment = Alignment.CenterStart,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    )
-                }
-            }
+            ThumbnailImage(
+                thumbnail = pdfFile1?.thumbnail,
+                alignment = Alignment.CenterEnd
+            )
+            ThumbnailImage(
+                thumbnail = pdfFile2?.thumbnail,
+                alignment = Alignment.CenterStart
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+private fun RowScope.ThumbnailImage(
+    thumbnail: File?,
+    alignment: Alignment
+) {
+    Box(modifier = Modifier.weight(1f)) {
+        if (thumbnail != null) {
+            GlideImage(
+                model = thumbnail,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                alignment = alignment,
+                modifier = Modifier
+                    .fillMaxSize()
+            )
         }
     }
 }

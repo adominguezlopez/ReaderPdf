@@ -19,6 +19,7 @@ import com.viewer.pdf.PdfReaderState
 import kotlinx.coroutines.launch
 import java.io.File
 import java.lang.StrictMath.ceil
+import java.lang.StrictMath.max
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -62,7 +63,7 @@ class MainActivity : ComponentActivity() {
                     readerState.currentPage
                 }.collect {
                     pdfPage = if (readerState.doublePage) {
-                        it * 2 - 1
+                        max(it * 2 - 1, 0)
                     } else {
                         ceil(it / 2.0).toInt()
                     }
