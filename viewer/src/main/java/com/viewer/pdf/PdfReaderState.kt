@@ -16,7 +16,7 @@ class PdfReaderState(
     val reverseLayout: Boolean = false
 ) {
     val pageCount get() = if (doublePage) pages.size / 2 + 1 else pages.size
-    val pagerState = PagerState(initialPage = if (doublePage) initialPage / 2 else initialPage)
+    val pagerState = PagerState(initialPage = initialPage)
     var readerSize by mutableStateOf(IntSize.Zero)
 
     val currentPage get() = pagerState.currentPage

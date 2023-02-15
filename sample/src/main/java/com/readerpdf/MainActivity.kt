@@ -16,10 +16,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.viewer.pdf.PdfReader
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
-import com.viewer.pdf.rememberPdfReaderState
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.io.File
+import java.lang.StrictMath.ceil
+import java.lang.StrictMath.max
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -48,21 +48,25 @@ class MainActivity : ComponentActivity() {
             }
             val scope = rememberCoroutineScope()
             val orientation = LocalConfiguration.current.orientation
-            var currentPage by remember { mutableStateOf(0) }
+            var pdfPage by remember { mutableStateOf(0) }
             val readerState = remember(orientation) {
                 PdfReaderState(
-                    initialPage = currentPage,
+                    initialPage = pdfPage,
                     pages = list,
                     doublePage = orientation == ORIENTATION_LANDSCAPE,
                     reverseLayout = false
                 )
             }
-            
-            LaunchedEffect(readerState){
+
+            LaunchedEffect(readerState) {
                 snapshotFlow {
                     readerState.currentPage
-                }.collect(){
-                    currentPage = it
+                }.collect {
+                    pdfPage = if (readerState.doublePage) {
+                        max(it * 2 - 1, 0)
+                    } else {
+                        ceil(it / 2.0).toInt()
+                    }
                 }
             }
 

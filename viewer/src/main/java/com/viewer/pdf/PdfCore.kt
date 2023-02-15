@@ -5,6 +5,8 @@ import android.graphics.PointF
 import com.artifex.mupdf.fitz.*
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice
 import java.io.File
+import kotlin.math.ceil
+import kotlin.math.floor
 
 class PdfCore(
     file: File,
@@ -59,23 +61,25 @@ class PdfCore(
 
     @Synchronized
     fun drawPage(
-        bm: Bitmap?, pageNum: Int,
-        pageW: Int, pageH: Int,
-        patchX: Int, patchY: Int,
-        cookie: Cookie?
+        bitmap: Bitmap,
+        rect: RectI,
+        scaledHeight: Int,
+        pageNum: Int = 0,
     ) {
         gotoPage(pageNum)
         if (displayList == null && page != null) displayList = page!!.toDisplayList()
         if (displayList == null || page == null) return
+
         val zoom = (resolution / 72).toFloat()
         val ctm = Matrix(zoom, zoom)
-        val bbox = RectI(page!!.bounds.transform(ctm))
-        val xscale = pageW.toFloat() / (bbox.x1 - bbox.x0).toFloat()
-        val yscale = pageH.toFloat() / (bbox.y1 - bbox.y0).toFloat()
-        ctm.scale(xscale, yscale)
-        val dev = AndroidDrawDevice(bm, patchX, patchY)
+        val bbox = page!!.bounds.transform(ctm)
+
+        val yscale = scaledHeight.toFloat() / (bbox.y1 - bbox.y0)
+        ctm.scale(yscale)
+
+        val dev = AndroidDrawDevice(bitmap, rect.x0, rect.y0)
         try {
-            displayList!!.run(dev, ctm, cookie)
+            displayList!!.run(dev, ctm, Cookie())
             dev.close()
         } finally {
             dev.destroy()
@@ -87,4 +91,16 @@ class PdfCore(
         gotoPage(pageNum)
         return if (page != null) page!!.links else null
     }
+}
+
+fun RectI.width(): Int {
+    return x1 - x0
+}
+
+fun android.graphics.Rect.toRectI(): RectI {
+    return RectI(left, top, right, bottom)
+}
+
+fun Rect.toRectI(): RectI {
+    return RectI(floor(x0).toInt(), floor(y0).toInt(), ceil(x1).toInt(), ceil(y1).toInt())
 }

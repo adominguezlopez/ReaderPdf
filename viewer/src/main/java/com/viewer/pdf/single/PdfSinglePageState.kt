@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.toSize
 import com.artifex.mupdf.fitz.Cookie
 import com.artifex.mupdf.fitz.Link
 import com.artifex.mupdf.fitz.Rect
+import com.artifex.mupdf.fitz.RectI
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderState
 import com.viewer.pdf.zoomable.ZoomState
@@ -85,7 +86,8 @@ class PdfSinglePageState(
                 }
 
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
-                    core.drawPage(this, pageToLoad, width, height, 0, 0, Cookie())
+                    val pageRect = RectI(0, 0, width, height)
+                    core.drawPage(this, pageRect, height)
                 }
 
                 // calculates and scales links to bitmap dimensions
@@ -157,14 +159,11 @@ class PdfSinglePageState(
                 synchronized(core) {
                     // get destination bitmap and draw page
                     val bitmap = getZoomedBitmap(width, height).apply {
+                        val pageRect = RectI(posX.toInt(), posY.toInt(), width, height)
                         core.drawPage(
                             this,
-                            pageToLoad,
-                            scaledWidth,
-                            scaledHeight,
-                            posX.toInt(),
-                            posY.toInt(),
-                            Cookie()
+                            pageRect,
+                            scaledHeight
                         )
                     }
 

@@ -121,14 +121,16 @@ class ZoomState(
                 _scale.animateTo(1f)
             }
 
-            _offsetX.updateBounds(0f, 0f)
             launch {
                 _offsetX.animateTo(0f)
+            }.invokeOnCompletion {
+                _offsetX.updateBounds(0f, 0f)
             }
 
-            _offsetY.updateBounds(0f, 0f)
             launch {
                 _offsetY.animateTo(0f)
+            }.invokeOnCompletion {
+                _offsetY.updateBounds(0f, 0f)
             }
         } else {
             launch { _scale.snapTo(1f) }

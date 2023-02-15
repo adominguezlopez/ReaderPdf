@@ -1,19 +1,22 @@
 package com.viewer.pdf.double
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
 import com.viewer.pdf.zoomable.zoomable
 import kotlinx.coroutines.*
+import java.io.File
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun PdfDoublePage(
     pdfFile1: PdfReaderPage.PdfFile?,
@@ -26,7 +29,7 @@ fun PdfDoublePage(
 
     if (pdfFile1 == null && pdfFile2 == null) return
 
-    DisposableEffect(pdfFile1, pdfFile2) {
+    DisposableEffect(position) {
         val scope = MainScope()
         scope.launch {
             val core1 = pdfFile1?.let {
@@ -50,6 +53,7 @@ fun PdfDoublePage(
         }
         onDispose {
             scope.cancel()
+
             state?.dispose()
             state = null
         }
@@ -59,6 +63,40 @@ fun PdfDoublePage(
     if (currentState?.entireBitmap != null) {
         Box(contentAlignment = Alignment.Center) {
             PdfEntireDoublePage(state = currentState)
+            PdfZoomedDoublePage(state = currentState)
+        }
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.Center
+        ) {
+            ThumbnailImage(
+                thumbnail = pdfFile1?.thumbnail,
+                alignment = Alignment.CenterEnd
+            )
+            ThumbnailImage(
+                thumbnail = pdfFile2?.thumbnail,
+                alignment = Alignment.CenterStart
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+private fun RowScope.ThumbnailImage(
+    thumbnail: File?,
+    alignment: Alignment
+) {
+    Box(modifier = Modifier.weight(1f)) {
+        if (thumbnail != null) {
+            GlideImage(
+                model = thumbnail,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                alignment = alignment,
+                modifier = Modifier
+                    .fillMaxSize()
+            )
         }
     }
 }
@@ -67,6 +105,8 @@ fun PdfDoublePage(
 private fun PdfEntireDoublePage(
     state: PdfDoublePageState
 ) {
+
+
     val entireBitmap = state.entireBitmap
     val currentZoomState = state.zoomState
     if (entireBitmap != null) {
@@ -80,6 +120,29 @@ private fun PdfEntireDoublePage(
                     zoomState = currentZoomState,
                     //onTap = state::handleClick
                 )
+        )
+    }
+}
+
+@Composable
+fun PdfZoomedDoublePage(state: PdfDoublePageState) {
+    val zoomState = state.zoomState
+    if (zoomState.scale <= 1f) return
+
+    DisposableEffect(zoomState.isSettled) {
+        val job = state.refreshZoomedContent()
+        onDispose {
+            job?.cancel()
+            state.clearZoomedContent()
+        }
+    }
+
+    val zoomedBitmap = state.zoomedBitmap
+    if (zoomedBitmap != null) {
+        Image(
+            bitmap = zoomedBitmap.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit
         )
     }
 }
