@@ -89,11 +89,7 @@ class PdfDoublePageState(
             // Find out left and right pages
             val page1 = job1?.await()
             val page2 = job2?.await()
-            if (!readerState.reverseLayout) {
-                page1 to page2
-            } else {
-                page2 to page1
-            }
+            readerState.getContentForCurrentLayout(page1, page2)
         }
 
         // Now offset the right page as needed
@@ -202,65 +198,71 @@ class PdfDoublePageState(
         val contentY = zoomState.boundsY - zoomState.offsetY
 
         val scaledContentBounds = Rect(contentX, contentY, contentX + contentWidth, contentY + contentHeight).toIntRect()
-        val (scaledPage1Bounds, scaledPage2Bounds) = getPagesBounds(scaledContentBounds, scale)
+        val (leftScaledPageBounds, rightScaledPageBounds) = getPagesBounds(scaledContentBounds, scale)
 
         return scope.launch {
-            val bitmap1 = withContext(Dispatchers.IO) {
-                val core1 = core1
-                if (core1 != null && !scaledPage1Bounds.isEmpty) {
-                    synchronized(core1) {
-                        Bitmap.createBitmap(
-                            scaledPage1Bounds.width,
-                            contentHeight,
-                            Bitmap.Config.ARGB_8888
-                        ).apply {
-                            core1.drawPage(this, scaledPage1Bounds, scaledHeight)
-                        }
-                    }
-                } else null
-            }
-
-            val bitmap2 = withContext(Dispatchers.IO) {
-                val core2 = core2
-                if (core2 != null && !scaledPage2Bounds.isEmpty) {
-                    synchronized(core2) {
-                        Bitmap.createBitmap(
-                            scaledPage2Bounds.width,
-                            contentHeight,
-                            Bitmap.Config.ARGB_8888
-                        ).apply {
-                            core2.drawPage(this, scaledPage2Bounds, scaledHeight)
-                        }
-                    }
-                } else null
-            }
 
             val mergedBitmap = withContext(Dispatchers.IO) {
-                val finalBitmap = Bitmap.createBitmap(contentWidth, contentHeight, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(finalBitmap)
-                if (bitmap1 != null) {
-                    canvas.drawBitmap(bitmap1, 0f, 0f, null)
-                }
-
-                if (bitmap2 != null) {
-                    val startX = if (bitmap1 != null) {
-                        if (bitmap1.width + bitmap2.width > contentWidth) {
-                            bitmap1.width - 1
-                        } else {
-                            bitmap1.width
+                val (leftCore, rightCore) = readerState.getContentForCurrentLayout(core1, core2)
+                val (leftBitmap, rightBitmap) = coroutineScope {
+                    val leftJob = if (leftCore != null && !leftScaledPageBounds.isEmpty) {
+                        async {
+                            synchronized(leftCore) {
+                                Bitmap.createBitmap(
+                                    leftScaledPageBounds.width,
+                                    contentHeight,
+                                    Bitmap.Config.ARGB_8888
+                                ).apply {
+                                    leftCore.drawPage(this, leftScaledPageBounds, scaledHeight)
+                                }
+                            }
                         }
-                    } else {
-                        contentWidth - bitmap2.width
-                    }.toFloat()
-                    canvas.drawBitmap(
-                        bitmap2,
-                        startX,
-                        0f,
-                        null
-                    )
+                    } else null
+
+                    val rightJob = if (rightCore != null && !rightScaledPageBounds.isEmpty) {
+                        async {
+                            synchronized(rightCore) {
+                                Bitmap.createBitmap(
+                                    rightScaledPageBounds.width,
+                                    contentHeight,
+                                    Bitmap.Config.ARGB_8888
+                                ).apply {
+                                    rightCore.drawPage(this, rightScaledPageBounds, scaledHeight)
+                                }
+                            }
+                        }
+                    } else null
+
+                    leftJob?.await() to rightJob?.await()
                 }
 
-                finalBitmap
+                withContext(Dispatchers.IO) {
+                    val finalBitmap = Bitmap.createBitmap(contentWidth, contentHeight, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(finalBitmap)
+                    if (leftBitmap != null) {
+                        canvas.drawBitmap(leftBitmap, 0f, 0f, null)
+                    }
+
+                    if (rightBitmap != null) {
+                        val startX = if (leftBitmap != null) {
+                            if (leftBitmap.width + rightBitmap.width > contentWidth) {
+                                leftBitmap.width - 1
+                            } else {
+                                leftBitmap.width
+                            }
+                        } else {
+                            contentWidth - rightBitmap.width
+                        }.toFloat()
+                        canvas.drawBitmap(
+                            rightBitmap,
+                            startX,
+                            0f,
+                            null
+                        )
+                    }
+
+                    finalBitmap
+                }
             }
 
             // scale links to new zoom
@@ -274,14 +276,14 @@ class PdfDoublePageState(
     }
 
     private fun getPagesBounds(scaledContentBounds: IntRect, scale: Float): Pair<IntRect, IntRect> {
-        val page1Rect = leftPageRect
-        val page1RectRes = if (page1Rect != null) {
-            val scaledPage1Rect = page1Rect.scale(scale).toIntRect()
-            if (scaledContentBounds.left < scaledPage1Rect.right) {
+        val leftPageRect = leftPageRect
+        val leftPageRectRes = if (leftPageRect != null) {
+            val leftScaledPageRect = leftPageRect.scale(scale).toIntRect()
+            if (scaledContentBounds.left < leftScaledPageRect.right) {
                 IntRect(
                     scaledContentBounds.left,
                     scaledContentBounds.top,
-                    min(scaledContentBounds.right, scaledPage1Rect.right),
+                    min(scaledContentBounds.right, leftScaledPageRect.right),
                     scaledContentBounds.bottom
                 )
             } else {
@@ -291,14 +293,14 @@ class PdfDoublePageState(
             IntRect(0, 0, 0 ,0)
         }
 
-        val page2Rect = rightPageRect
-        val page2RectRes = if (page2Rect != null) {
-            val scaledPage2Rect = page2Rect.scale(scale).toIntRect()
-            if (scaledContentBounds.right > scaledPage2Rect.left) {
+        val rightPageRect = rightPageRect
+        val rightPageRectRes = if (rightPageRect != null) {
+            val rightScaledPageRect = rightPageRect.scale(scale).toIntRect()
+            if (scaledContentBounds.right > rightScaledPageRect.left) {
                 IntRect(
-                    max(scaledContentBounds.left, scaledPage2Rect.left) - scaledPage2Rect.left,
+                    max(scaledContentBounds.left, rightScaledPageRect.left) - rightScaledPageRect.left,
                     scaledContentBounds.top,
-                    scaledContentBounds.right - scaledPage2Rect.left,
+                    scaledContentBounds.right - rightScaledPageRect.left,
                     scaledContentBounds.bottom
                 )
             } else {
@@ -308,7 +310,7 @@ class PdfDoublePageState(
             IntRect(0, 0, 0 ,0)
         }
 
-        return page1RectRes to page2RectRes
+        return leftPageRectRes to rightPageRectRes
     }
 
     fun dispose() {

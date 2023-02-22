@@ -24,6 +24,14 @@ class PdfReaderState(
     suspend fun setCurrentPage(position: Int) {
         pagerState.animateScrollToPage(position)
     }
+
+    fun <T> getContentForCurrentLayout(param1: T, param2: T): Pair<T, T> {
+        return if (!reverseLayout) {
+            param1 to param2
+        } else {
+            param2 to param1
+        }
+    }
 }
 
 @Composable
@@ -45,5 +53,6 @@ fun rememberPdfReaderState(
 
 sealed class PdfReaderPage {
     object Empty : PdfReaderPage()
-    data class PdfFile(val file: File, val password: String? = null, val thumbnail: File? = null) : PdfReaderPage()
+    data class PdfFile(val file: File, val password: String? = null, val thumbnail: File? = null) :
+        PdfReaderPage()
 }
