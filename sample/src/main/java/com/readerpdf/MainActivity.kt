@@ -1,6 +1,8 @@
 package com.readerpdf
 
+import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -19,7 +21,6 @@ import com.viewer.pdf.PdfReaderState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.io.File
-import java.lang.StrictMath.ceil
 import java.lang.StrictMath.max
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -73,7 +74,7 @@ class MainActivity : ComponentActivity() {
                     readerState.currentPage
                 }.drop(1).collect {
                     page = if (readerState.doublePage) {
-                        max(it * 2 - 1, 0)
+                        max(it * 2, 0)
                     } else {
                         it
                     }
@@ -108,8 +109,13 @@ class MainActivity : ComponentActivity() {
                         PdfReader(
                             readerState = readerState,
                             modifier = Modifier.padding(it),
-                            onLinkClick = {
-                                Log.d("link", "Clicked on link $it")
+                            onLinkClick = { link ->
+                                Log.d("link", "Clicked on link $link")
+                                if (link.startsWith("http")) {
+                                    startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                        data = Uri.parse(link)
+                                    })
+                                }
                             },
                         )
                     }

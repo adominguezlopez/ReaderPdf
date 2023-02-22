@@ -13,6 +13,22 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.viewer.pdf.zoomable.zoomable
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun PdfPage(state: PdfPageState, position: Int) {
+    Box(contentAlignment = Alignment.Center) {
+        PdfEntirePage(state = state)
+        PdfZoomedPage(state = state)
+    }
+
+    // Reset zoom state when the page is moved out of the window.
+    val isVisible = position == state.readerState.pagerState.settledPage
+    LaunchedEffect(isVisible) {
+        if (!isVisible) {
+            state.zoomState.reset()
+        }
+    }
+}
 
 @Composable
 fun PdfEntirePage(
@@ -55,22 +71,5 @@ fun PdfZoomedPage(state: PdfPageState) {
             contentDescription = null,
             contentScale = ContentScale.Fit
         )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun PdfPage(state: PdfPageState, position: Int) {
-    Box(contentAlignment = Alignment.Center) {
-        PdfEntirePage(state = state)
-        PdfZoomedPage(state = state)
-    }
-
-    // Reset zoom state when the page is moved out of the window.
-    val isVisible = position == state.readerState.pagerState.settledPage
-    LaunchedEffect(isVisible) {
-        if (!isVisible) {
-            state.zoomState.reset()
-        }
     }
 }

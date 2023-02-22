@@ -15,9 +15,24 @@ import kotlinx.coroutines.Job
 @Stable
 abstract class PdfPageState {
 
+    /**
+     * Scope of the page state used to perform async operations
+     */
     abstract val scope: CoroutineScope
+
+    /**
+     * State of the reader
+     */
     abstract val readerState: PdfReaderState
+
+    /**
+     * Callback called when a link is clicked
+     */
     abstract val onLinkClick: (String) -> Unit
+
+    /**
+     * Zoom state used to handle gestures and reload bitmaps from pdf
+     */
     abstract val zoomState: ZoomState
 
     /**

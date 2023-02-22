@@ -32,7 +32,6 @@ fun PdfReader(
                     PdfReaderPage.Empty -> {
                     }
                     is PdfReaderPage.PdfFile -> {
-
                         PdfSinglePage(
                             pdfFile = page,
                             readerState = readerState,
