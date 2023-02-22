@@ -2,18 +2,14 @@ package com.viewer.pdf.double
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Rect
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.toSize
-import com.artifex.mupdf.fitz.Link
-import com.artifex.mupdf.fitz.Matrix
-import com.artifex.mupdf.fitz.RectI
-import com.artifex.mupdf.fitz.Rect as RectF
-import com.viewer.pdf.PdfCore
-import com.viewer.pdf.PdfReaderState
-import com.viewer.pdf.toRectI
-import com.viewer.pdf.width
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.*
+import com.viewer.pdf.*
+import com.viewer.pdf.util.scale
+import com.viewer.pdf.util.toIntRect
 import com.viewer.pdf.zoomable.ZoomState
 import kotlinx.coroutines.*
 import kotlin.math.max
@@ -24,11 +20,13 @@ import kotlin.math.min
  * links
  *
  * @param scope The scope to perform asynchronous executions
- * @param core The pdf manager that allows to read from .pdf files
+ * @param core1 The first pdf manager that allows to read from .pdf files
+ * @param core2 The second pdf manager that allows to read from .pdf files
  * @param readerState The state of the pager
  * @param onLinkClick Lambda triggered on link clicked by the user
  * @param zoomState Holds the state of the zoom
- * @param pageToLoad The page index to load from the pdf file
+ * @param core1PageToLoad The page index to load from the core1
+ * @param core2PageToLoad The page index to load from the core2
  */
 @Stable
 class PdfDoublePageState(
@@ -38,13 +36,9 @@ class PdfDoublePageState(
     val readerState: PdfReaderState,
     val onLinkClick: (String) -> Unit,
     val zoomState: ZoomState = ZoomState(maxScale = 600f),
-    private val pageToLoad: Int = 0
+    private val core1PageToLoad: Int = 0,
+    private val core2PageToLoad: Int = 0,
 ) {
-    /**
-     * Size of the page in the pdf
-     */
-    private var pageSize by mutableStateOf(IntSize.Zero)
-
     /**
      * Current bitmap of the whole page scaled to the screen size
      */
@@ -53,114 +47,141 @@ class PdfDoublePageState(
     /**
      * Current links of the whole page scaled to the screen size
      */
-    private var entireLinks by mutableStateOf<List<Link>?>(null)
+    private var links by mutableStateOf<PdfPageLinks?>(null)
 
     /**
      * Current bitmap of a page region scaled to the screen size. Null if not zooming
      */
     var zoomedBitmap by mutableStateOf<Bitmap?>(null)
 
-    /**
-     * Current links of a page scaled to the screen size. Null if not zooming
-     */
-    private var zoomedLinks by mutableStateOf<List<Link>?>(null)
-
-    private var entireRect: RectI? = null
-
-    private var page1Rect: Rect? = null
-    private var page2Rect: Rect? = null
+    private var leftPageRect: Rect? = null
+    private var rightPageRect: Rect? = null
 
     init {
         scope.launch {
-            val (bitmap, links) = withContext(Dispatchers.IO) {
-                if (!readerState.reverseLayout) {
-                    getPageBitmap(core1, core2) to listOf<Link>()
-                } else {
-                    getPageBitmap(core2, core1) to listOf<Link>()
-                }
+            val content = withContext(Dispatchers.IO) {
+                getDoublePageContent(core1, core2)
             }
 
             // sets the bitmap content and links of the whole page
-            entireBitmap = bitmap
-            entireLinks = links
-            entireRect = RectI(0, 0, bitmap.width, bitmap.height)
+            entireBitmap = content.bitmap
+            links = content.links
 
-            zoomState.setContentSize(IntSize(bitmap.width, bitmap.height).toSize())
+            val contentSize = IntSize(content.bitmap.width, content.bitmap.height)
+            zoomState.setContentSize(contentSize.toSize())
             zoomState.setLayoutSize(readerState.readerSize.toSize())
         }
     }
 
-    private fun getPageBitmap(core1: PdfCore?, core2: PdfCore?): Bitmap {
+    private suspend fun getDoublePageContent(core1: PdfCore?, core2: PdfCore?): PdfDoublePageContent {
         val readerSize = readerState.readerSize
         val aspectRatioReader = (readerSize.width / 2) / readerSize.height
 
-        var bitmap1: Bitmap? = null
-        var bitmap2: Bitmap? = null
+        var (leftContent, rightContent) = coroutineScope {
+            val job1 = if (core1 != null) {
+                async { getPageContent(core1, aspectRatioReader, readerSize, core1PageToLoad) }
+            } else null
 
-        if (core1 != null) {
-            val pdfPageSize = core1.getPageSize(pageToLoad)
-            val aspectRatioPage = pdfPageSize.x / pdfPageSize.y
+            val job2 = if (core2 != null) {
+                async { getPageContent(core2, aspectRatioReader, readerSize, core2PageToLoad) }
+            } else null
 
-            // calculates visible width & height dimensions
-            val (width, height) = if (aspectRatioReader < aspectRatioPage) {
-                readerSize.width/2 to (readerSize.width/2 / aspectRatioPage).toInt()
+            // Find out left and right pages
+            val page1 = job1?.await()
+            val page2 = job2?.await()
+            if (!readerState.reverseLayout) {
+                page1 to page2
             } else {
-                (readerSize.height * aspectRatioPage).toInt() to readerSize.height
-            }
-            bitmap1 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            page1Rect = Rect(0, 0, width, height).apply {
-                core1.drawPage(bitmap1, toRectI(), height)
+                page2 to page1
             }
         }
 
-        if (core2 != null) {
-            val pdfPageSize = core2.getPageSize(pageToLoad)
-            val aspectRatioPage = pdfPageSize.x / pdfPageSize.y
-
-            // calculates visible width & height dimensions
-            val (width, height) = if (aspectRatioReader < aspectRatioPage) {
-                readerSize.width/2 to (readerSize.width/2 / aspectRatioPage).toInt()
-            } else {
-                (readerSize.height * aspectRatioPage).toInt() to readerSize.height
-            }
-
-            bitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val leftOffset = page1Rect?.width() ?: (readerSize.width - width)
-            page2Rect = Rect(leftOffset, 0, width+leftOffset, height)
-            val pageRect = Rect(0, 0, width, height)
-            core2.drawPage(bitmap2, pageRect.toRectI(), height)
+        // Now offset the right page as needed
+        val rightPageOffset = when {
+            leftContent != null -> leftContent.screenBounds.width
+            rightContent != null -> rightContent.screenBounds.width
+            else -> throw IllegalStateException("bitmap and bitmap2 must not be null")
         }
+        rightContent = rightContent?.let { content ->
+             content.copy(
+                screenBounds = content.screenBounds.translate(Offset(rightPageOffset, 0f))
+            )
+        }
+
+        // TODO try to avoid globals
+        leftPageRect = leftContent?.screenBounds
+        rightPageRect = rightContent?.screenBounds
 
         val bitmapSize = when {
-            bitmap1 != null && bitmap2 != null -> IntSize(
-                bitmap1.width + bitmap2.width,
-                max(bitmap1.height, bitmap2.height)
+            leftContent != null && rightContent != null -> IntSize(
+                leftContent.bitmap.width + rightContent.bitmap.width,
+                max(leftContent.bitmap.height, rightContent.bitmap.height)
             )
-            bitmap1 != null -> IntSize(bitmap1.width * 2, bitmap1.height)
-            bitmap2 != null -> IntSize(bitmap2.width * 2, bitmap2.height)
-            else -> throw IllegalStateException("bitmap1 and bitmap2 must not be null")
+            leftContent != null -> IntSize(leftContent.bitmap.width * 2, leftContent.bitmap.height)
+            rightContent != null -> IntSize(rightContent.bitmap.width * 2, rightContent.bitmap.height)
+            else -> throw IllegalStateException("bitmap and bitmap2 must not be null")
         }
 
-        val mergedBitmap =
-            Bitmap.createBitmap(bitmapSize.width, bitmapSize.height, Bitmap.Config.ARGB_8888)
+        val mergedBitmap = Bitmap.createBitmap(bitmapSize.width, bitmapSize.height, Bitmap.Config.ARGB_8888)
 
         val canvas = Canvas(mergedBitmap)
-        if (bitmap1 != null) {
-            canvas.drawBitmap(bitmap1, 0f, 0f, null)
+        if (leftContent != null) {
+            canvas.drawBitmap(leftContent.bitmap, 0f, 0f, null)
         }
 
-        if (bitmap2 != null) {
-            canvas.drawBitmap(
-                bitmap2,
-                ((bitmap1?.width ?: (mergedBitmap.width / 2))).toFloat(),
-                0f,
-                null
-            )
+        if (rightContent != null) {
+            canvas.drawBitmap(rightContent.bitmap, rightPageOffset, 0f, null)
         }
 
-        bitmap1?.recycle()
-        bitmap2?.recycle()
-        return mergedBitmap
+        leftContent?.bitmap?.recycle()
+        rightContent?.bitmap?.recycle()
+
+        val links = PdfPageLinks(buildList {
+            leftContent?.links?.baseLinks?.let(::addAll)
+            // Offset links of the right page
+            rightContent?.links?.baseLinks?.map {
+                it.copy(bounds = it.bounds.translate(Offset(rightPageOffset.toFloat(), 0f)))
+            }?.let(::addAll)
+        })
+
+        return PdfDoublePageContent(
+            mergedBitmap,
+            links
+        )
+    }
+
+    private fun getPageContent(
+        core: PdfCore,
+        aspectRatioReader: Int,
+        readerSize: IntSize,
+        pageToLoad: Int
+    ): PdfPageContent {
+        val pdfPageSize = core.getPageSize(pageToLoad)
+        val aspectRatioPage = pdfPageSize.width / pdfPageSize.height
+
+        // calculates visible width & height dimensions
+        val (width, height) = if (aspectRatioReader < aspectRatioPage) {
+            readerSize.width / 2 to (readerSize.width / 2 / aspectRatioPage).toInt()
+        } else {
+            (readerSize.height * aspectRatioPage).toInt() to readerSize.height
+        }
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val bounds = IntRect(0, 0, width, height).apply {
+            core.drawPage(bitmap, this, height)
+        }
+
+        // calculates and scales links to bitmap dimensions
+        val links = core.getPageLinks(pageToLoad).apply {
+            val scaleFactor = height.toFloat() / pdfPageSize.height
+            setBaseScale(scaleFactor)
+        }
+
+        return PdfPageContent(
+            bitmap = bitmap,
+            links = links,
+            screenBounds = bounds.toRect(),
+            originalSize = pdfPageSize
+        )
     }
 
     fun refreshZoomedContent(): Job? {
@@ -180,7 +201,7 @@ class PdfDoublePageState(
         val contentX = zoomState.boundsX - zoomState.offsetX
         val contentY = zoomState.boundsY - zoomState.offsetY
 
-        val scaledContentBounds = RectF(contentX, contentY, contentX + contentWidth, contentY + contentHeight).toRectI()
+        val scaledContentBounds = Rect(contentX, contentY, contentX + contentWidth, contentY + contentHeight).toIntRect()
         val (scaledPage1Bounds, scaledPage2Bounds) = getPagesBounds(scaledContentBounds, scale)
 
         return scope.launch {
@@ -189,7 +210,7 @@ class PdfDoublePageState(
                 if (core1 != null && !scaledPage1Bounds.isEmpty) {
                     synchronized(core1) {
                         Bitmap.createBitmap(
-                            scaledPage1Bounds.width(),
+                            scaledPage1Bounds.width,
                             contentHeight,
                             Bitmap.Config.ARGB_8888
                         ).apply {
@@ -204,7 +225,7 @@ class PdfDoublePageState(
                 if (core2 != null && !scaledPage2Bounds.isEmpty) {
                     synchronized(core2) {
                         Bitmap.createBitmap(
-                            scaledPage2Bounds.width(),
+                            scaledPage2Bounds.width,
                             contentHeight,
                             Bitmap.Config.ARGB_8888
                         ).apply {
@@ -242,63 +263,81 @@ class PdfDoublePageState(
                 finalBitmap
             }
 
+            // scale links to new zoom
+            links?.scale(scale)
+
             if (isActive) {
                 zoomedBitmap = mergedBitmap
-                //zoomedLinks = links
             }
         }
 
     }
 
-    private fun getPagesBounds(scaledContentBounds: RectI, scale: Float): Pair<RectI, RectI> {
-        val page1Rect = page1Rect
+    private fun getPagesBounds(scaledContentBounds: IntRect, scale: Float): Pair<IntRect, IntRect> {
+        val page1Rect = leftPageRect
         val page1RectRes = if (page1Rect != null) {
-            val scaledPage1Rect = page1Rect.toRectI().transform(Matrix(scale))
-            if (scaledContentBounds.x0 < scaledPage1Rect.x1) {
-                RectI(
-                    scaledContentBounds.x0,
-                    scaledContentBounds.y0,
-                    min(scaledContentBounds.x1, scaledPage1Rect.x1),
-                    scaledContentBounds.y1
+            val scaledPage1Rect = page1Rect.scale(scale).toIntRect()
+            if (scaledContentBounds.left < scaledPage1Rect.right) {
+                IntRect(
+                    scaledContentBounds.left,
+                    scaledContentBounds.top,
+                    min(scaledContentBounds.right, scaledPage1Rect.right),
+                    scaledContentBounds.bottom
                 )
             } else {
-                RectI(0, 0, 0, 0)
+                IntRect(0, 0, 0, 0)
             }
         } else {
-            RectI(0, 0, 0 ,0)
+            IntRect(0, 0, 0 ,0)
         }
 
-        val page2Rect = page2Rect
+        val page2Rect = rightPageRect
         val page2RectRes = if (page2Rect != null) {
-            val scaledPage2Rect = page2Rect.toRectI().transform(Matrix(scale))
-            if (scaledContentBounds.x1 > scaledPage2Rect.x0) {
-                RectI(
-                    max(scaledContentBounds.x0, scaledPage2Rect.x0) - scaledPage2Rect.x0,
-                    scaledContentBounds.y0,
-                    scaledContentBounds.x1 - scaledPage2Rect.x0,
-                    scaledContentBounds.y1
+            val scaledPage2Rect = page2Rect.scale(scale).toIntRect()
+            if (scaledContentBounds.right > scaledPage2Rect.left) {
+                IntRect(
+                    max(scaledContentBounds.left, scaledPage2Rect.left) - scaledPage2Rect.left,
+                    scaledContentBounds.top,
+                    scaledContentBounds.right - scaledPage2Rect.left,
+                    scaledContentBounds.bottom
                 )
             } else {
-                RectI(0, 0, 0, 0)
+                IntRect(0, 0, 0, 0)
             }
         } else {
-            RectI(0, 0, 0 ,0)
+            IntRect(0, 0, 0 ,0)
         }
 
         return page1RectRes to page2RectRes
     }
 
     fun dispose() {
-        //entireBitmap?.recycle()
-        //zoomedBitmap?.recycle()
         entireBitmap = null
         zoomedBitmap = null
-        //core1?.destroy()
-        //core2?.destroy()
-
     }
 
     fun clearZoomedContent() {
         zoomedBitmap = null
+        links?.resetScale()
+    }
+
+    fun handleClick(position: Offset) {
+        val contentOffset = zoomState.getOffsetInContent(position)
+        val link = links?.findLink(contentOffset)
+        if (link != null) {
+            onLinkClick(link.uri)
+        }
     }
 }
+
+private data class PdfPageContent(
+    val bitmap: Bitmap,
+    val links: PdfPageLinks,
+    val originalSize: Size,
+    val screenBounds: Rect
+)
+
+private data class PdfDoublePageContent(
+    val bitmap: Bitmap,
+    val links: PdfPageLinks,
+)

@@ -1,12 +1,12 @@
 package com.viewer.pdf
 
 import android.graphics.Bitmap
-import android.graphics.PointF
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.IntRect
 import com.artifex.mupdf.fitz.*
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice
 import java.io.File
-import kotlin.math.ceil
-import kotlin.math.floor
 
 class PdfCore(
     file: File,
@@ -54,15 +54,15 @@ class PdfCore(
     }
 
     @Synchronized
-    fun getPageSize(pageNum: Int): PointF {
+    fun getPageSize(pageNum: Int): Size {
         gotoPage(pageNum)
-        return PointF(pageWidth, pageHeight)
+        return Size(pageWidth, pageHeight)
     }
 
     @Synchronized
     fun drawPage(
         bitmap: Bitmap,
-        rect: RectI,
+        rect: IntRect,
         scaledHeight: Int,
         pageNum: Int = 0,
     ) {
@@ -77,7 +77,7 @@ class PdfCore(
         val yscale = scaledHeight.toFloat() / (bbox.y1 - bbox.y0)
         ctm.scale(yscale)
 
-        val dev = AndroidDrawDevice(bitmap, rect.x0, rect.y0)
+        val dev = AndroidDrawDevice(bitmap, rect.left, rect.top)
         try {
             displayList!!.run(dev, ctm, Cookie())
             dev.close()
@@ -87,20 +87,22 @@ class PdfCore(
     }
 
     @Synchronized
-    fun getPageLinks(pageNum: Int): Array<Link>? {
+    fun getPageLinks(pageNum: Int): PdfPageLinks {
         gotoPage(pageNum)
-        return if (page != null) page!!.links else null
+        val page = page
+        return if (page != null) {
+            PdfPageLinks(page.links.orEmpty().toList().map {
+                val rect = Rect(
+                    left = it.bounds.x0,
+                    top = it.bounds.y0,
+                    right = it.bounds.x1,
+                    bottom = it.bounds.y1
+                )
+                PdfPageLink(rect, it.uri)
+            })
+        } else {
+            PdfPageLinks(emptyList())
+        }
     }
-}
 
-fun RectI.width(): Int {
-    return x1 - x0
-}
-
-fun android.graphics.Rect.toRectI(): RectI {
-    return RectI(left, top, right, bottom)
-}
-
-fun Rect.toRectI(): RectI {
-    return RectI(floor(x0).toInt(), floor(y0).toInt(), ceil(x1).toInt(), ceil(y1).toInt())
 }

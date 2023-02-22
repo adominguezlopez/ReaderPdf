@@ -105,8 +105,6 @@ private fun RowScope.ThumbnailImage(
 private fun PdfEntireDoublePage(
     state: PdfDoublePageState
 ) {
-
-
     val entireBitmap = state.entireBitmap
     val currentZoomState = state.zoomState
     if (entireBitmap != null) {
@@ -118,7 +116,7 @@ private fun PdfEntireDoublePage(
                 .fillMaxSize()
                 .zoomable(
                     zoomState = currentZoomState,
-                    //onTap = state::handleClick
+                    onTap = state::handleClick
                 )
         )
     }
