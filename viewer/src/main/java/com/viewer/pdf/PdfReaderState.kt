@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.unit.IntSize
 import java.io.File
+import kotlin.math.max
 
 @Stable
 @OptIn(ExperimentalFoundationApi::class)
@@ -16,7 +17,7 @@ class PdfReaderState(
     val reverseLayout: Boolean = false
 ) {
     val pageCount get() = if (doublePage) pages.size / 2 + 1 else pages.size
-    val pagerState = PagerState(initialPage = initialPage)
+    val pagerState = PagerState(initialPage = if (doublePage) max(0, initialPage / 2 - 1) else initialPage)
     var readerSize by mutableStateOf(IntSize.Zero)
 
     val currentPage get() = pagerState.currentPage
