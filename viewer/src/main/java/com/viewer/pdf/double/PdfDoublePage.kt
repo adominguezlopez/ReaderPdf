@@ -69,12 +69,14 @@ fun PdfDoublePage(
         Row(
             horizontalArrangement = Arrangement.Center
         ) {
+            val (leftThumbnail, rightThumbnail) = readerState.getContentForCurrentLayout(pdfFile1?.thumbnail, pdfFile2?.thumbnail)
+
             ThumbnailImage(
-                thumbnail = pdfFile1?.thumbnail,
+                thumbnail = leftThumbnail,
                 alignment = Alignment.CenterEnd
             )
             ThumbnailImage(
-                thumbnail = pdfFile2?.thumbnail,
+                thumbnail = rightThumbnail,
                 alignment = Alignment.CenterStart
             )
         }
@@ -105,8 +107,6 @@ private fun RowScope.ThumbnailImage(
 private fun PdfEntireDoublePage(
     state: PdfDoublePageState
 ) {
-
-
     val entireBitmap = state.entireBitmap
     val currentZoomState = state.zoomState
     if (entireBitmap != null) {
@@ -118,7 +118,7 @@ private fun PdfEntireDoublePage(
                 .fillMaxSize()
                 .zoomable(
                     zoomState = currentZoomState,
-                    //onTap = state::handleClick
+                    onTap = state::handleClick
                 )
         )
     }
