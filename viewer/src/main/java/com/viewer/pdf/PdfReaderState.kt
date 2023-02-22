@@ -34,23 +34,6 @@ class PdfReaderState(
     }
 }
 
-@Composable
-fun rememberPdfReaderState(
-    initialPage: Int = 0,
-    pages: SnapshotStateList<PdfReaderPage>,
-    doublePage: Boolean = false,
-    reverseLayout: Boolean = false
-): PdfReaderState {
-    return remember {
-        PdfReaderState(
-            initialPage = initialPage,
-            pages = pages,
-            doublePage = doublePage,
-            reverseLayout = reverseLayout
-        )
-    }
-}
-
 sealed class PdfReaderPage {
     object Empty : PdfReaderPage()
     data class PdfFile(val file: File, val password: String? = null, val thumbnail: File? = null) :

@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
             val list = remember {
                 mutableStateListOf<PdfReaderPage>().apply {
                     val file = File("${cacheDir.absolutePath}/assets")
-                    repeat(255) {
+                    repeat(254) {
                         val pageFile = it.toString().padStart(6, '0')
                         add(PdfReaderPage.PdfFile(File(file, "$pageFile.pdf"), pwd, File(file, "$pageFile.jpg")))
                     }
@@ -93,10 +93,10 @@ class MainActivity : ComponentActivity() {
                     ) {
                         PdfReader(
                             readerState = readerState,
+                            modifier = Modifier.padding(it),
                             onLinkClick = {
                                 Log.d("link", "Clicked on link $it")
                             },
-                            modifier = Modifier.padding(it),
                         )
                     }
                 }

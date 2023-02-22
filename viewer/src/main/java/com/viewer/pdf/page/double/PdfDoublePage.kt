@@ -1,22 +1,19 @@
-package com.viewer.pdf.double
+package com.viewer.pdf.page.double
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.viewer.pdf.PdfCore
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
-import com.viewer.pdf.zoomable.zoomable
+import com.viewer.pdf.page.PdfPage
 import kotlinx.coroutines.*
 import java.io.File
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun PdfDoublePage(
     pdfFile1: PdfReaderPage.PdfFile?,
@@ -42,7 +39,6 @@ fun PdfDoublePage(
                     PdfCore(pdfFile2.file, pdfFile2.password)
                 }
             }
-
             state = PdfDoublePageState(
                 scope = scope,
                 core1 = core1,
@@ -53,7 +49,6 @@ fun PdfDoublePage(
         }
         onDispose {
             scope.cancel()
-
             state?.dispose()
             state = null
         }
@@ -61,10 +56,7 @@ fun PdfDoublePage(
 
     val currentState = state
     if (currentState?.entireBitmap != null) {
-        Box(contentAlignment = Alignment.Center) {
-            PdfEntireDoublePage(state = currentState)
-            PdfZoomedDoublePage(state = currentState)
-        }
+        PdfPage(currentState, position)
     } else {
         Row(
             horizontalArrangement = Arrangement.Center
@@ -103,46 +95,3 @@ private fun RowScope.ThumbnailImage(
     }
 }
 
-@Composable
-private fun PdfEntireDoublePage(
-    state: PdfDoublePageState
-) {
-    val entireBitmap = state.entireBitmap
-    val currentZoomState = state.zoomState
-    if (entireBitmap != null) {
-        Image(
-            bitmap = entireBitmap.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxSize()
-                .zoomable(
-                    zoomState = currentZoomState,
-                    onTap = state::handleClick
-                )
-        )
-    }
-}
-
-@Composable
-fun PdfZoomedDoublePage(state: PdfDoublePageState) {
-    val zoomState = state.zoomState
-    if (zoomState.scale <= 1f) return
-
-    DisposableEffect(zoomState.isSettled) {
-        val job = state.refreshZoomedContent()
-        onDispose {
-            job?.cancel()
-            state.clearZoomedContent()
-        }
-    }
-
-    val zoomedBitmap = state.zoomedBitmap
-    if (zoomedBitmap != null) {
-        Image(
-            bitmap = zoomedBitmap.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit
-        )
-    }
-}
