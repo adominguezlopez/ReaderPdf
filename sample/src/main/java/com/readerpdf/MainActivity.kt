@@ -1,6 +1,8 @@
 package com.readerpdf
 
+import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -16,9 +18,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.viewer.pdf.PdfReader
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.io.File
-import java.lang.StrictMath.ceil
 import java.lang.StrictMath.max
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -28,9 +30,13 @@ class MainActivity : ComponentActivity() {
     private val pwd = "4826e69ed1a35b923ce91edd06d2ec5527b9d949"
 
     private lateinit var inernalAssetsFolder: String
+    private var page: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        savedInstanceState?.let { bundle ->
+            page = bundle.getInt("page")
+        }
 
         inernalAssetsFolder = applicationContext.cacheDir!!.absolutePath + "/assets/"
 
@@ -40,18 +46,23 @@ class MainActivity : ComponentActivity() {
             val list = remember {
                 mutableStateListOf<PdfReaderPage>().apply {
                     val file = File("${cacheDir.absolutePath}/assets")
-                    repeat(255) {
+                    repeat(254) {
                         val pageFile = it.toString().padStart(6, '0')
-                        add(PdfReaderPage.PdfFile(File(file, "$pageFile.pdf"), pwd, File(file, "$pageFile.jpg")))
+                        add(
+                            PdfReaderPage.PdfFile(
+                                File(file, "$pageFile.pdf"),
+                                pwd,
+                                File(file, "$pageFile.jpg")
+                            )
+                        )
                     }
                 }
             }
             val scope = rememberCoroutineScope()
             val orientation = LocalConfiguration.current.orientation
-            var pdfPage by remember { mutableStateOf(0) }
             val readerState = remember(orientation) {
                 PdfReaderState(
-                    initialPage = pdfPage,
+                    initialPage = page,
                     pages = list,
                     doublePage = orientation == ORIENTATION_LANDSCAPE,
                     reverseLayout = false
@@ -61,11 +72,11 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(readerState) {
                 snapshotFlow {
                     readerState.currentPage
-                }.collect {
-                    pdfPage = if (readerState.doublePage) {
-                        max(it * 2 - 1, 0)
+                }.drop(1).collect {
+                    page = if (readerState.doublePage) {
+                        max(it * 2, 0)
                     } else {
-                        ceil(it / 2.0).toInt()
+                        it
                     }
                 }
             }
@@ -78,12 +89,16 @@ class MainActivity : ComponentActivity() {
                                 title = { Text("Page ${readerState.currentPage + 1}/${readerState.pageCount}") },
                                 actions = {
                                     IconButton(onClick = {
-                                        val newPage = Random.nextInt(IntRange(0, readerState.pageCount - 1))
+                                        val newPage =
+                                            Random.nextInt(IntRange(0, readerState.pageCount - 1))
                                         scope.launch {
                                             readerState.setCurrentPage(newPage)
                                         }
                                     }) {
-                                        Icon(imageVector = Icons.Default.Search, contentDescription = null)
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = null
+                                        )
                                     }
                                 },
                                 backgroundColor = Color.Black,
@@ -93,15 +108,25 @@ class MainActivity : ComponentActivity() {
                     ) {
                         PdfReader(
                             readerState = readerState,
-                            onLinkClick = {
-                                Log.d("link", "Clicked on link $it")
-                            },
                             modifier = Modifier.padding(it),
+                            onLinkClick = { link ->
+                                Log.d("link", "Clicked on link $link")
+                                if (link.startsWith("http")) {
+                                    startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                        data = Uri.parse(link)
+                                    })
+                                }
+                            },
                         )
                     }
                 }
             )
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("page", page)
     }
 }
 
