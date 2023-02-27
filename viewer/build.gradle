@@ -48,6 +48,20 @@ android {
     }
 }
 
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = "com.github.adominguezlopez"
+            artifactId = "viewer"
+            version = "1.0"
+
+            afterEvaluate {
+                from components.release
+            }
+        }
+    }
+}
+
 dependencies {
     api 'com.artifex.mupdf:fitz:1.20.2'
     implementation "dev.chrisbanes.snapper:snapper:0.3.0"
