@@ -3,6 +3,7 @@ package com.viewer.pdf.page.single
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.viewer.pdf.PdfCore
@@ -17,7 +18,7 @@ fun PdfSinglePage(
     pdfFile: PdfReaderPage.PdfFile,
     readerState: PdfReaderState,
     position: Int,
-    onLinkClick: (String) -> Unit
+    onClick: (Offset, String?) -> Unit,
 ) {
     var state by remember { mutableStateOf<PdfSinglePageState?>(null) }
 
@@ -31,7 +32,7 @@ fun PdfSinglePage(
                 scope = scope,
                 core = core,
                 readerState = readerState,
-                onLinkClick = onLinkClick
+                onClick = onClick,
             )
         }
         onDispose {
@@ -48,8 +49,7 @@ fun PdfSinglePage(
         GlideImage(
             model = pdfFile.thumbnail,
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }

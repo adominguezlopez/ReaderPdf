@@ -31,9 +31,7 @@ fun PdfPage(state: PdfPageState, position: Int) {
 }
 
 @Composable
-fun PdfEntirePage(
-    state: PdfPageState
-) {
+fun PdfEntirePage(state: PdfPageState) {
     val entireBitmap = state.entireBitmap
     val currentZoomState = state.zoomState
     if (entireBitmap != null) {
@@ -45,9 +43,13 @@ fun PdfEntirePage(
                 .fillMaxSize()
                 .zoomable(
                     zoomState = currentZoomState,
-                    onTap = state::handleClick
-                )
+                    onTap = state::handleClick,
+                ),
         )
+
+        if (state.readerState.initialPageAspectRatio == 0f) {
+            state.readerState.initialPageAspectRatio = entireBitmap.width.toFloat() / entireBitmap.height
+        }
     }
 }
 
@@ -69,7 +71,7 @@ fun PdfZoomedPage(state: PdfPageState) {
         Image(
             bitmap = zoomedBitmap.asImageBitmap(),
             contentDescription = null,
-            contentScale = ContentScale.Fit
+            contentScale = ContentScale.Fit,
         )
     }
 }

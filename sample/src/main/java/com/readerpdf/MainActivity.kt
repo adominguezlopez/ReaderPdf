@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -108,13 +109,15 @@ class MainActivity : ComponentActivity() {
                     ) {
                         PdfReader(
                             readerState = readerState,
-                            modifier = Modifier.padding(it),
-                            onLinkClick = { link ->
-                                Log.d("link", "Clicked on link $link")
-                                if (link.startsWith("http")) {
+                            modifier = Modifier.background(Color.Gray).padding(it),
+                            onClick = { offset, link ->
+                                if (link != null && link.startsWith("http")) {
+                                    Log.d("click", "Clicked on link $link")
                                     startActivity(Intent(Intent.ACTION_VIEW).apply {
                                         data = Uri.parse(link)
                                     })
+                                } else {
+                                    Log.d("click", "Clicked on screen position $offset")
                                 }
                             },
                         )

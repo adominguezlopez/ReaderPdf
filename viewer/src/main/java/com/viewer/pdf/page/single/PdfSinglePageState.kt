@@ -2,6 +2,7 @@ package com.viewer.pdf.page.single
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
@@ -20,7 +21,7 @@ import kotlin.math.min
  * @param scope The scope to perform asynchronous executions
  * @param core The pdf manager that allows to read from .pdf files
  * @param readerState The state of the pager
- * @param onLinkClick Lambda triggered on link clicked by the user
+ * @param onClick Lambda triggered on click by the user
  * @param zoomState Holds the state of the zoom
  * @param pageToLoad The page index to load from the pdf file
  */
@@ -28,10 +29,10 @@ import kotlin.math.min
 class PdfSinglePageState(
     override val scope: CoroutineScope,
     override val readerState: PdfReaderState,
-    override val onLinkClick: (String) -> Unit,
+    override val onClick: (Offset, String?) -> Unit,
     override val zoomState: ZoomState = ZoomState(maxScale = 6f),
     private val core: PdfCore,
-    private val pageToLoad: Int = 0
+    private val pageToLoad: Int = 0,
 ) : PdfPageState() {
 
     /**
@@ -117,11 +118,7 @@ class PdfSinglePageState(
                     // get destination bitmap and draw page
                     val bitmap = getZoomedBitmap(contentWidth, contentHeight).apply {
                         val pageRect = IntRect(contentX.toInt(), contentY.toInt(), contentWidth, contentHeight)
-                        core.drawPage(
-                            this,
-                            pageRect,
-                            scaledHeight
-                        )
+                        core.drawPage(this, pageRect, scaledHeight)
                     }
 
                     // scale links to new zoom

@@ -26,9 +26,9 @@ abstract class PdfPageState {
     abstract val readerState: PdfReaderState
 
     /**
-     * Callback called when a link is clicked
+     * Callback called when the screen is tapped. A string is provided if the tap was on an URI
      */
-    abstract val onLinkClick: (String) -> Unit
+    abstract val onClick: (Offset, String?) -> Unit
 
     /**
      * Zoom state used to handle gestures and reload bitmaps from pdf
@@ -58,9 +58,9 @@ abstract class PdfPageState {
     fun handleClick(position: Offset) {
         val contentOffset = zoomState.getOffsetInContent(position)
         val link = links?.findLink(contentOffset)
-        if (link != null) {
-            onLinkClick(link.uri)
-        }
+
+        // Always dispatch the on click event, even if there's no link
+        onClick(position, link?.uri)
     }
 
     fun dispose() {

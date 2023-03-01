@@ -10,7 +10,7 @@ fun Rect.toIntRect(): IntRect {
         left = floor(left).toInt(),
         top = floor(top).toInt(),
         right = ceil(right).toInt(),
-        bottom = ceil(bottom).toInt()
+        bottom = ceil(bottom).toInt(),
     )
 }
 
@@ -19,6 +19,6 @@ fun Rect.scale(factor: Float): Rect {
         left = floor(left * factor),
         top = floor(top * factor),
         right = ceil(right * factor),
-        bottom = ceil(bottom * factor)
+        bottom = ceil(bottom * factor),
     )
 }

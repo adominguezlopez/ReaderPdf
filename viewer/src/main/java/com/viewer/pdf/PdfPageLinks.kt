@@ -4,9 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import com.viewer.pdf.util.scale
 
-class PdfPageLinks(
-    links: List<PdfPageLink>
-) {
+class PdfPageLinks(links: List<PdfPageLink>) {
     var baseLinks = links
         private set
 
@@ -39,10 +37,9 @@ class PdfPageLinks(
             link.copy(bounds = link.bounds.scale(scale))
         }
     }
-
 }
 
 data class PdfPageLink(
     val bounds: Rect,
-    val uri: String
+    val uri: String,
 )

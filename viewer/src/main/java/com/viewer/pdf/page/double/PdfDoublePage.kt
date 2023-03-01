@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
@@ -20,7 +21,7 @@ fun PdfDoublePage(
     pdfFile2: PdfReaderPage.PdfFile?,
     readerState: PdfReaderState,
     position: Int,
-    onLinkClick: (String) -> Unit
+    onClick: (Offset, String?) -> Unit,
 ) {
     var state by remember { mutableStateOf<PdfDoublePageState?>(null) }
 
@@ -44,7 +45,7 @@ fun PdfDoublePage(
                 core1 = core1,
                 core2 = core2,
                 readerState = readerState,
-                onLinkClick = onLinkClick
+                onClick = onClick,
             )
         }
         onDispose {
@@ -59,17 +60,17 @@ fun PdfDoublePage(
         PdfPage(currentState, position)
     } else {
         Row(
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Center,
         ) {
             val (leftThumbnail, rightThumbnail) = readerState.getContentForCurrentLayout(pdfFile1?.thumbnail, pdfFile2?.thumbnail)
 
             ThumbnailImage(
                 thumbnail = leftThumbnail,
-                alignment = Alignment.CenterEnd
+                alignment = Alignment.CenterEnd,
             )
             ThumbnailImage(
                 thumbnail = rightThumbnail,
-                alignment = Alignment.CenterStart
+                alignment = Alignment.CenterStart,
             )
         }
     }
@@ -79,7 +80,7 @@ fun PdfDoublePage(
 @Composable
 private fun RowScope.ThumbnailImage(
     thumbnail: File?,
-    alignment: Alignment
+    alignment: Alignment,
 ) {
     Box(modifier = Modifier.weight(1f)) {
         if (thumbnail != null) {
@@ -88,10 +89,8 @@ private fun RowScope.ThumbnailImage(
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 alignment = alignment,
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
 }
-
