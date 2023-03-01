@@ -5,6 +5,8 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 @Stable
@@ -22,8 +24,12 @@ class PdfReaderState(
 
     val currentPage get() = pagerState.currentPage
 
-    suspend fun setCurrentPage(position: Int) {
-        pagerState.animateScrollToPage(position)
+    var scope: CoroutineScope? = null
+
+    fun setCurrentPage(position: Int) {
+        scope?.launch {
+            pagerState.animateScrollToPage(position)
+        }
     }
 
     fun <T> getContentForCurrentLayout(param1: T, param2: T): Pair<T, T> {

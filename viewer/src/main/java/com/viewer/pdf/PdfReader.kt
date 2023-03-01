@@ -25,6 +25,14 @@ fun PdfReader(
     modifier: Modifier = Modifier,
     onClick: (Offset, String?) -> Unit = { _, _ -> },
 ) {
+    val scope = rememberCoroutineScope()
+    DisposableEffect(readerState, scope) {
+        readerState.scope = scope
+        onDispose {
+            readerState.scope = null
+        }
+    }
+
     HorizontalPager(
         pageCount = readerState.pageCount,
         state = readerState.pagerState,
@@ -35,7 +43,7 @@ fun PdfReader(
             .onSizeChanged { readerState.readerSize = it }
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { onClick(it, null) })
-            }
+            },
     ) { position ->
         if (readerState.readerSize != IntSize.Zero) {
             if (!readerState.doublePage) {
