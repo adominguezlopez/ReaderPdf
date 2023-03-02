@@ -67,6 +67,13 @@ class PdfCore(
         pageNum: Int = 0,
     ) {
         gotoPage(pageNum)
+        
+        (page as? PDFPage)?.apply {
+            annotations?.forEach {
+                deleteAnnotation(it)
+            }
+        }
+
         if (displayList == null && page != null) displayList = page!!.toDisplayList()
         if (displayList == null || page == null) return
 
