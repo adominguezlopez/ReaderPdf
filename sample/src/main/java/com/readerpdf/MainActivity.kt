@@ -22,7 +22,6 @@ import com.viewer.pdf.PdfReaderState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.io.File
-import java.lang.StrictMath.max
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -71,15 +70,9 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(readerState) {
-                snapshotFlow {
-                    readerState.currentPage
-                }.drop(1).collect {
-                    page = if (readerState.doublePage) {
-                        max(it * 2, 0)
-                    } else {
-                        it
-                    }
-                }
+                snapshotFlow { readerState.realPage }
+                    .drop(1)
+                    .collect { page = it }
             }
 
             MaterialTheme(
@@ -113,9 +106,11 @@ class MainActivity : ComponentActivity() {
                             onClick = { offset, link ->
                                 if (link != null && link.startsWith("http")) {
                                     Log.d("click", "Clicked on link $link")
-                                    startActivity(Intent(Intent.ACTION_VIEW).apply {
-                                        data = Uri.parse(link)
-                                    })
+                                    startActivity(
+                                        Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse(link)
+                                        },
+                                    )
                                 } else {
                                     Log.d("click", "Clicked on screen position $offset")
                                 }
@@ -132,4 +127,3 @@ class MainActivity : ComponentActivity() {
         outState.putInt("page", page)
     }
 }
-

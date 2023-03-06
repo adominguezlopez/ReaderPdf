@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.max
 
 @Stable
 @OptIn(ExperimentalFoundationApi::class)
@@ -23,6 +24,13 @@ class PdfReaderState(
     var initialPageAspectRatio by mutableStateOf(0f)
 
     val currentPage get() = pagerState.currentPage
+    val realPage by derivedStateOf {
+        if (doublePage) {
+            max(currentPage * 2 - 1, 0)
+        } else {
+            currentPage
+        }
+    }
 
     var scope: CoroutineScope? = null
 
