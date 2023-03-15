@@ -3,10 +3,7 @@ package com.viewer.pdf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import com.viewer.pdf.page.double.PdfDoublePage
 import com.viewer.pdf.page.single.PdfSinglePage
 
@@ -38,6 +36,7 @@ fun PdfReader(
         state = readerState.pagerState,
         reverseLayout = readerState.reverseLayout,
         beyondBoundsPageCount = 1,
+        pageSpacing = 10.dp,
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { readerState.readerSize = it }
