@@ -11,6 +11,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.viewer.pdf.page.double.PdfDoublePage
@@ -21,6 +22,7 @@ import com.viewer.pdf.page.single.PdfSinglePage
 fun PdfReader(
     readerState: PdfReaderState,
     modifier: Modifier = Modifier,
+    pageSpacing: Dp = 10.dp,
     onClick: (Offset, String?) -> Unit = { _, _ -> },
 ) {
     val scope = rememberCoroutineScope()
@@ -36,7 +38,7 @@ fun PdfReader(
         state = readerState.pagerState,
         reverseLayout = readerState.reverseLayout,
         beyondBoundsPageCount = 1,
-        pageSpacing = 10.dp,
+        pageSpacing = pageSpacing,
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { readerState.readerSize = it }
