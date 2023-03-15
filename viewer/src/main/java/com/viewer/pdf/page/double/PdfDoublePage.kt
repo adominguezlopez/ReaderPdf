@@ -32,12 +32,12 @@ fun PdfDoublePage(
         scope.launch {
             val core1 = pdfFile1?.let {
                 withContext(Dispatchers.IO) {
-                    PdfCore(pdfFile1.file, pdfFile1.password)
+                    PdfCore(pdfFile1.file, pdfFile1.passwords)
                 }
             }
             val core2 = pdfFile2?.let {
                 withContext(Dispatchers.IO) {
-                    PdfCore(pdfFile2.file, pdfFile2.password)
+                    PdfCore(pdfFile2.file, pdfFile2.passwords)
                 }
             }
             state = PdfDoublePageState(

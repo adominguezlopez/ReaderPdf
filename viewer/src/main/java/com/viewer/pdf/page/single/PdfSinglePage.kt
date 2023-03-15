@@ -26,7 +26,7 @@ fun PdfSinglePage(
         val scope = MainScope()
         scope.launch {
             val core = withContext(Dispatchers.IO) {
-                PdfCore(pdfFile.file, pdfFile.password)
+                PdfCore(pdfFile.file, pdfFile.passwords)
             }
             state = PdfSinglePageState(
                 scope = scope,

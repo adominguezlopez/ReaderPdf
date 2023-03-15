@@ -51,5 +51,5 @@ class PdfReaderState(
 
 sealed class PdfReaderPage {
     object Empty : PdfReaderPage()
-    data class PdfFile(val file: File, val password: String? = null, val thumbnail: File? = null) : PdfReaderPage()
+    data class PdfFile(val file: File, val passwords: List<String>? = null, val thumbnail: File? = null) : PdfReaderPage()
 }

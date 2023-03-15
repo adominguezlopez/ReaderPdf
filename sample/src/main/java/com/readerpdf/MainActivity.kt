@@ -27,7 +27,7 @@ import kotlin.random.nextInt
 
 class MainActivity : ComponentActivity() {
 
-    private val pwd = "4826e69ed1a35b923ce91edd06d2ec5527b9d949"
+    private val pwd = "q82n3ks92j9sd72bnsldf7823hbzx7"
 
     private lateinit var inernalAssetsFolder: String
     private var page: Int = 0
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                         add(
                             PdfReaderPage.PdfFile(
                                 File(file, "$pageFile.pdf"),
-                                pwd,
+                                listOf(pwd),
                                 File(file, "$pageFile.jpg")
                             )
                         )

@@ -10,7 +10,7 @@ import java.io.File
 
 class PdfCore(
     file: File,
-    password: String? = null,
+    passwords: List<String>? = null,
     private val resolution: Int = 160
 ) {
     private val doc: Document
@@ -23,7 +23,7 @@ class PdfCore(
 
     init {
         doc = PDFDocument.openDocument(file.absolutePath) as PDFDocument
-        password?.let { doc.authenticatePassword(it) }
+        passwords?.find { doc.authenticatePassword(it) }
         pageCount = doc.countPages()
     }
 
