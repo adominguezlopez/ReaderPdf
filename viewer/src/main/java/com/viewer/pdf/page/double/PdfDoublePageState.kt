@@ -230,11 +230,7 @@ class PdfDoublePageState(
 
                     if (rightBitmap != null) {
                         val startX = if (leftBitmap != null) {
-                            if (leftBitmap.width + rightBitmap.width > contentWidth) {
-                                leftBitmap.width - 1
-                            } else {
-                                leftBitmap.width
-                            }
+                            leftBitmap.width - 1
                         } else {
                             contentWidth - rightBitmap.width
                         }.toFloat()
