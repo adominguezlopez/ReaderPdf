@@ -70,7 +70,7 @@ class PdfDoublePageState(
         core2: PdfCore?,
     ): PdfDoublePageContent {
         val readerSize = readerState.readerSize
-        val aspectRatioReader = (readerSize.width / 2) / readerSize.height
+        val aspectRatioReader = (readerSize.width / 2f) / readerSize.height
 
         var (leftContent, rightContent) = coroutineScope {
             val job1 = if (core1 != null) {
@@ -145,7 +145,7 @@ class PdfDoublePageState(
 
     private fun getPageContent(
         core: PdfCore,
-        aspectRatioReader: Int,
+        aspectRatioReader: Float,
         readerSize: IntSize,
         pageToLoad: Int,
     ): PdfPageContent {
