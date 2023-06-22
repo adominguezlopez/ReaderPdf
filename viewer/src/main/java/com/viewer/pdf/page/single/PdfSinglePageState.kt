@@ -48,7 +48,7 @@ class PdfSinglePageState(
                 val readerSize = readerState.readerSize
 
                 // calculates screen & pdf aspect ratios
-                val aspectRatioReader = readerSize.width / readerSize.height
+                val aspectRatioReader = readerSize.width.toFloat() / readerSize.height
                 val aspectRatioPage = pdfPageSize.width / pdfPageSize.height
 
                 // calculates visible width & height dimensions
