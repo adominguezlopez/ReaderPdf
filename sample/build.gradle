@@ -13,12 +13,12 @@ android {
         }
     }
     namespace 'com.readerpdf'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.readerpdf"
         minSdk 21
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -62,11 +62,11 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation "androidx.compose.animation:animation:1.4.0-beta01"
-    implementation "androidx.compose.foundation:foundation:1.4.0-beta01"
-    implementation "androidx.compose.material:material:1.4.0-beta01"
-    implementation "androidx.compose.runtime:runtime:1.4.0-beta01"
-    implementation "androidx.compose.ui:ui:1.4.0-beta01"
-    implementation "androidx.activity:activity-compose:1.7.0-alpha04"
+    implementation "androidx.compose.animation:animation:1.5.0"
+    implementation "androidx.compose.foundation:foundation:1.5.0"
+    implementation "androidx.compose.material:material:1.5.0"
+    implementation "androidx.compose.runtime:runtime:1.5.0"
+    implementation "androidx.compose.ui:ui:1.5.0"
+    implementation "androidx.activity:activity-compose:1.6.1"
 
 }

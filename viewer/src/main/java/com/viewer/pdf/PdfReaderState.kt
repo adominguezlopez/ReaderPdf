@@ -13,13 +13,13 @@ import kotlin.math.max
 @Stable
 @OptIn(ExperimentalFoundationApi::class)
 class PdfReaderState(
-    val initialPage: Int,
+    val pagerState: PagerState,
     val pages: SnapshotStateList<PdfReaderPage>,
     val doublePage: Boolean = false,
     val reverseLayout: Boolean = false,
 ) {
     val pageCount get() = if (doublePage) pages.size / 2 + 1 else pages.size
-    val pagerState = PagerState(initialPage = if (doublePage) (initialPage + 1) / 2 else initialPage)
+
     var readerSize by mutableStateOf(IntSize.Zero)
     var initialPageAspectRatio by mutableStateOf(0f)
 

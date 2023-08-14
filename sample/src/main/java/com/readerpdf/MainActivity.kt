@@ -7,8 +7,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -32,6 +34,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var inernalAssetsFolder: String
     private var page: Int = 0
 
+    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         savedInstanceState?.let { bundle ->
@@ -60,9 +63,14 @@ class MainActivity : ComponentActivity() {
             }
             val scope = rememberCoroutineScope()
             val orientation = LocalConfiguration.current.orientation
+
+            val pagerState = rememberPagerState(
+                initialPage = if (orientation == ORIENTATION_LANDSCAPE) (page + 1) / 2 else page,
+            ) { list.size }
+
             val readerState = remember(orientation) {
                 PdfReaderState(
-                    initialPage = page,
+                    pagerState = pagerState,
                     pages = list,
                     doublePage = orientation == ORIENTATION_LANDSCAPE,
                     reverseLayout = false

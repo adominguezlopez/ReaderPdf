@@ -34,7 +34,6 @@ fun PdfReader(
     }
 
     HorizontalPager(
-        pageCount = readerState.pageCount,
         state = readerState.pagerState,
         reverseLayout = readerState.reverseLayout,
         beyondBoundsPageCount = 1,
