@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        compose_compiler_version = '1.4.0'
+        compose_compiler_version = '1.4.1'
         android_core_ktx = '1.9.0'
         lifecycle_runtime_ktx = '2.5.1'
     }
