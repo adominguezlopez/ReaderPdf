@@ -75,7 +75,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
     implementation "androidx.compose.animation:animation:1.4.3"
-    implementation("androidx.compose.foundation:foundation:1.4.3") {
+    implementation("androidx.compose.foundation:foundation") {
         version{
             strictly("1.4.3")
         }
