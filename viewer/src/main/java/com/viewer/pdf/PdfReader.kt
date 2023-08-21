@@ -23,7 +23,7 @@ fun PdfReader(
     readerState: PdfReaderState,
     modifier: Modifier = Modifier,
     pageSpacing: Dp = 10.dp,
-    onClick: (Offset, String?) -> Unit = { _, _ -> },
+    onClick: (Offset, String?) -> Unit = { _, _ -> }
 ) {
     val scope = rememberCoroutineScope()
     DisposableEffect(readerState, scope) {
@@ -34,7 +34,7 @@ fun PdfReader(
     }
 
     HorizontalPager(
-        state = readerState.pagerState,
+        state = readerState,
         reverseLayout = readerState.reverseLayout,
         beyondBoundsPageCount = 1,
         pageSpacing = pageSpacing,
@@ -43,7 +43,7 @@ fun PdfReader(
             .onSizeChanged { readerState.readerSize = it }
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { onClick(it, null) })
-            },
+            }
     ) { position ->
         if (readerState.readerSize != IntSize.Zero) {
             if (!readerState.doublePage) {
@@ -53,7 +53,7 @@ fun PdfReader(
                             pdfFile = page,
                             readerState = readerState,
                             position = position,
-                            onClick = onClick,
+                            onClick = onClick
                         )
                     }
                     PdfReaderPage.Empty -> {
@@ -70,7 +70,7 @@ fun PdfReader(
                         pdfFile2 = page2 as? PdfReaderPage.PdfFile,
                         readerState = readerState,
                         position = position,
-                        onClick = onClick,
+                        onClick = onClick
                     )
                 } else {
                     EmptyPage(readerState)
@@ -89,6 +89,6 @@ private fun EmptyPage(readerState: PdfReaderState) {
         modifier = Modifier
             .fillMaxHeight()
             .aspectRatio(readerState.initialPageAspectRatio)
-            .background(Color.White),
+            .background(Color.White)
     )
 }

@@ -7,10 +7,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -21,11 +19,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.viewer.pdf.PdfReader
 import com.viewer.pdf.PdfReaderPage
 import com.viewer.pdf.PdfReaderState
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -34,7 +32,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var inernalAssetsFolder: String
     private var page: Int = 0
 
-    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         savedInstanceState?.let { bundle ->
@@ -64,13 +61,9 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val orientation = LocalConfiguration.current.orientation
 
-            val pagerState = rememberPagerState(
-                initialPage = if (orientation == ORIENTATION_LANDSCAPE) (page + 1) / 2 else page,
-            ) { list.size }
-
             val readerState = remember(orientation) {
                 PdfReaderState(
-                    pagerState = pagerState,
+                    initialPage = page,
                     pages = list,
                     doublePage = orientation == ORIENTATION_LANDSCAPE,
                     reverseLayout = false
@@ -117,12 +110,12 @@ class MainActivity : ComponentActivity() {
                                     startActivity(
                                         Intent(Intent.ACTION_VIEW).apply {
                                             data = Uri.parse(link)
-                                        },
+                                        }
                                     )
                                 } else {
                                     Log.d("click", "Clicked on screen position $offset")
                                 }
-                            },
+                            }
                         )
                     }
                 }

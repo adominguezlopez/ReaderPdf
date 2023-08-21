@@ -41,5 +41,5 @@ class PdfPageLinks(links: List<PdfPageLink>) {
 
 data class PdfPageLink(
     val bounds: Rect,
-    val uri: String,
+    val uri: String
 )

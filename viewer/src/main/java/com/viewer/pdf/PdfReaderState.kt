@@ -5,25 +5,24 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.unit.IntSize
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.max
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Stable
 @OptIn(ExperimentalFoundationApi::class)
 class PdfReaderState(
-    val pagerState: PagerState,
+    initialPage: Int,
     val pages: SnapshotStateList<PdfReaderPage>,
     val doublePage: Boolean = false,
-    val reverseLayout: Boolean = false,
-) {
-    val pageCount get() = if (doublePage) pages.size / 2 + 1 else pages.size
+    val reverseLayout: Boolean = false
+) : PagerState(initialPage) {
+    override val pageCount get() = if (doublePage) pages.size / 2 + 1 else pages.size
 
     var readerSize by mutableStateOf(IntSize.Zero)
-    var initialPageAspectRatio by mutableStateOf(0f)
+    var initialPageAspectRatio by mutableFloatStateOf(0f)
 
-    val currentPage get() = pagerState.currentPage
     val realPage by derivedStateOf {
         if (doublePage) {
             max(currentPage * 2 - 1, 0)
@@ -36,7 +35,7 @@ class PdfReaderState(
 
     fun setCurrentPage(position: Int) {
         scope?.launch {
-            pagerState.animateScrollToPage(position)
+            animateScrollToPage(position)
         }
     }
 
@@ -51,5 +50,9 @@ class PdfReaderState(
 
 sealed class PdfReaderPage {
     object Empty : PdfReaderPage()
-    data class PdfFile(val file: File, val passwords: List<String>? = null, val thumbnail: File? = null) : PdfReaderPage()
+    data class PdfFile(
+        val file: File,
+        val passwords: List<String>? = null,
+        val thumbnail: File? = null
+    ) : PdfReaderPage()
 }

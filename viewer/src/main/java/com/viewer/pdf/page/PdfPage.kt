@@ -1,6 +1,5 @@
 package com.viewer.pdf.page
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +12,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import com.viewer.pdf.zoomable.zoomable
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PdfPage(state: PdfPageState, position: Int) {
     Box(contentAlignment = Alignment.Center) {
@@ -22,7 +20,7 @@ fun PdfPage(state: PdfPageState, position: Int) {
     }
 
     // Reset zoom state when the page is moved out of the window.
-    val isVisible = position == state.readerState.pagerState.settledPage
+    val isVisible = position == state.readerState.settledPage
     LaunchedEffect(isVisible) {
         if (!isVisible) {
             state.zoomState.reset()
@@ -43,8 +41,8 @@ fun PdfEntirePage(state: PdfPageState) {
                 .fillMaxSize()
                 .zoomable(
                     zoomState = currentZoomState,
-                    onTap = state::handleClick,
-                ),
+                    onTap = state::handleClick
+                )
         )
 
         if (state.readerState.initialPageAspectRatio == 0f) {
@@ -71,7 +69,7 @@ fun PdfZoomedPage(state: PdfPageState) {
         Image(
             bitmap = zoomedBitmap.asImageBitmap(),
             contentDescription = null,
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.Fit
         )
     }
 }

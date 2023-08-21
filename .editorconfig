@@ -1,0 +1,7 @@
+root = true
+
+# noinspection EditorConfigKeyCorrectness
+[*.{kt,kts}]
+ktlint_code_style = android
+ktlint_standard_no-wildcard-imports = disabled
+max_line_length = 121
