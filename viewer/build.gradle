@@ -28,7 +28,7 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
     buildFeatures {
         compose true
@@ -64,22 +64,17 @@ publishing {
 
 dependencies {
     implementation project(':lib')
-    implementation "dev.chrisbanes.snapper:snapper:0.3.0"
-    implementation "com.github.bumptech.glide:compose:1.0.0-alpha.1"
+    implementation "com.github.bumptech.glide:compose:1.0.0-alpha.6"
 
     implementation "androidx.core:core-ktx:$android_core_ktx"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_runtime_ktx"
 
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-
-    implementation "androidx.compose.animation:animation:1.5.0"
-    implementation "androidx.compose.foundation:foundation:1.5.0"
-    implementation "androidx.compose.material:material:1.5.0"
-    implementation "androidx.compose.runtime:runtime:1.5.0"
-    implementation "androidx.compose.ui:ui:1.5.0"
-    implementation "androidx.compose.ui:ui-util:1.5.0"
-    implementation "androidx.activity:activity-compose:1.7.0-alpha04"
+    implementation "androidx.compose.animation:animation:1.5.1"
+    implementation "androidx.compose.foundation:foundation:1.5.1"
+    implementation "androidx.compose.material:material:1.5.1"
+    implementation "androidx.compose.runtime:runtime:1.5.1"
+    implementation "androidx.compose.ui:ui:1.5.1"
+    implementation "androidx.compose.ui:ui-util:1.5.1"
+    implementation "androidx.activity:activity-compose:1.7.2"
 
 }
